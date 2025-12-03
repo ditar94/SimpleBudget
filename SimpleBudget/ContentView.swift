@@ -372,7 +372,8 @@ private struct BudgetDial: View {
     private var primaryTrim: Double { min(max(progress, 0), 1) }
     private var overdrawTrim: Double { max(progress - 1, 0) }
     private var visibleOverdraw: Double { min(overdrawTrim, 1) }
-    private var knobProgress: Double { min(max(progress, 0), 1 + visibleOverdraw) }
+    private var completedOverdrawWraps: Double { floor(overdrawTrim) }
+    private var knobProgress: Double { max(progress, 0) }
     private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
     private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
     private var overageAmount: Double {
@@ -409,24 +410,27 @@ private struct BudgetDial: View {
                     .rotationEffect(.degrees(0))
 
                 if overBudget {
-                    let overdraw = min(overdrawTrim, 1)
+                    let overdraw = visibleOverdraw
                     let overdrawStart = primaryTrim
                     let overdrawEnd = overdrawStart + overdraw
 
                     let firstSegmentEnd = min(overdrawEnd, 1)
                     let wraparoundAmount = max(overdrawEnd - 1, 0)
+                    let gradientStartAngle = -90 + (overdrawStart + completedOverdrawWraps) * 360
 
-                    Circle()
-                        .trim(from: overdrawStart, to: firstSegmentEnd)
-                        .stroke(
-                            AngularGradient(
-                                colors: [Color.red.opacity(0.65), .red],
-                                center: .center,
-                                startAngle: .degrees(-90 + overdrawStart * 360),
-                                endAngle: .degrees(-90 + firstSegmentEnd * 360)
-                            ),
-                            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
-                        )
+                    if firstSegmentEnd > overdrawStart {
+                        Circle()
+                            .trim(from: overdrawStart, to: firstSegmentEnd)
+                            .stroke(
+                                AngularGradient(
+                                    colors: [Color.red.opacity(0.65), .red],
+                                    center: .center,
+                                    startAngle: .degrees(gradientStartAngle),
+                                    endAngle: .degrees(gradientStartAngle + (firstSegmentEnd - overdrawStart) * 360)
+                                ),
+                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .butt)
+                            )
+                    }
 
                     if wraparoundAmount > 0 {
                         Circle()
@@ -435,10 +439,10 @@ private struct BudgetDial: View {
                                 AngularGradient(
                                     colors: [Color.red.opacity(0.65), .red],
                                     center: .center,
-                                    startAngle: .degrees(-90),
-                                    endAngle: .degrees(-90 + min(wraparoundAmount, 1) * 360)
+                                    startAngle: .degrees(gradientStartAngle + (firstSegmentEnd - overdrawStart) * 360),
+                                    endAngle: .degrees(gradientStartAngle + (firstSegmentEnd - overdrawStart + min(wraparoundAmount, 1)) * 360)
                                 ),
-                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .butt)
                             )
                     }
 
