@@ -20,30 +20,33 @@ struct SimpleBudgetApp: App {
             BudgetSettings.self,
             BudgetCategory.self
         ])
-        let configuration: ModelConfiguration
-        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
-            configuration = ModelConfiguration(
-                "shared-config",
-                schema: schema,
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                groupContainer: .identifier(groupIdentifier),
-                cloudKitDatabase: .private(cloudKitIdentifier)
-            )
-        } else {
-            configuration = ModelConfiguration(
-                "local-config",
-                schema: schema,
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                cloudKitDatabase: .private(cloudKitIdentifier)
-            )
-        }
+        let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
+
+        let primaryConfiguration = ModelConfiguration(
+            supportsAppGroup ? "shared-config" : "local-config",
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            allowsSave: true,
+            groupContainer: supportsAppGroup ? .identifier(groupIdentifier) : nil,
+            cloudKitDatabase: .private(cloudKitIdentifier)
+        )
 
         do {
-            return try ModelContainer(for: schema, configurations: [configuration])
+            return try ModelContainer(for: schema, configurations: [primaryConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Fallback to a local-only store to keep the app running when entitlements
+            // or CloudKit availability cause initialization to fail (e.g., Simulator).
+            let fallbackConfiguration = ModelConfiguration(
+                "local-fallback",
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true
+            )
+            do {
+                return try ModelContainer(for: schema, configurations: [fallbackConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 

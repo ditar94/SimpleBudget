@@ -50,26 +50,27 @@ enum WidgetModelContainer {
                 BudgetSettings.self,
                 BudgetCategory.self
             ])
-            let configuration: ModelConfiguration
-            if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
-                configuration = ModelConfiguration(
-                    "widget-config",
+            let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
+            let primaryConfiguration = ModelConfiguration(
+                supportsAppGroup ? "widget-config" : "widget-local-config",
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true,
+                groupContainer: supportsAppGroup ? .identifier(groupIdentifier) : nil,
+                cloudKitDatabase: .private(cloudKitIdentifier)
+            )
+
+            do {
+                return try ModelContainer(for: schema, configurations: [primaryConfiguration])
+            } catch {
+                let fallbackConfiguration = ModelConfiguration(
+                    "widget-local-fallback",
                     schema: schema,
                     isStoredInMemoryOnly: false,
-                    allowsSave: true,
-                    groupContainer: .identifier(groupIdentifier),
-                    cloudKitDatabase: .private(cloudKitIdentifier)
+                    allowsSave: true
                 )
-            } else {
-                configuration = ModelConfiguration(
-                    "widget-local-config",
-                    schema: schema,
-                    isStoredInMemoryOnly: false,
-                    allowsSave: true,
-                    cloudKitDatabase: .private(cloudKitIdentifier)
-                )
+                return try ModelContainer(for: schema, configurations: [fallbackConfiguration])
             }
-            return try ModelContainer(for: schema, configurations: [configuration])
         }
     }
 }
