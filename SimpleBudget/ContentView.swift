@@ -74,16 +74,6 @@ struct ContentView: View {
         .onAppear {
             _ = settings
         }
-        .sheet(isPresented: $isPresentingAddSheet) {
-            NavigationStack {
-                AddExpenseForm(
-                    categories: categories,
-                    onSave: addTransaction,
-                    onDismiss: { isPresentingAddSheet = false }
-                )
-            }
-            .presentationDetents([.medium, .large])
-        }
         .toolbarBackground(.visible, for: .tabBar)
     }
 
@@ -211,20 +201,6 @@ private struct AddExpenseTab: View {
                 .padding(24)
             }
             .navigationTitle("New Expense")
-            .sheet(isPresented: $showingForm) {
-                NavigationStack {
-                AddExpenseForm(
-                    categories: categories,
-                    onSave: { draft in
-                        onAdd(draft)
-                        showingForm = false
-                            self.draft = TransactionDraft(category: categories.first ?? "General")
-                        },
-                        onDismiss: { showingForm = false }
-                    )
-                }
-                .presentationDetents([.medium, .large])
-            }
             .onAppear {
                 if draft.category.isEmpty {
                     draft.category = categories.first ?? "General"
