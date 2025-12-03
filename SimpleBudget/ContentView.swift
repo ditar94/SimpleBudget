@@ -16,7 +16,6 @@ struct ContentView: View {
 
     @State private var selectedTab: Tab = .add
     @State private var selectedMonth: Date = .now
-    @State private var isPresentingAddSheet = false
 
     private var settings: BudgetSettings {
         if let settings = settingsCollection.first {
@@ -75,17 +74,6 @@ struct ContentView: View {
         }
         .onAppear {
             _ = settings
-        }
-        .sheet(isPresented: $isPresentingAddSheet) {
-            NavigationStack {
-                AddExpenseForm(
-                    categories: categories,
-                    quickAddAmount: settings.quickAddAmount,
-                    onSave: addTransaction,
-                    onDismiss: { isPresentingAddSheet = false }
-                )
-            }
-            .presentationDetents([.medium, .large])
         }
         .toolbarBackground(.visible, for: .tabBar)
     }
@@ -155,7 +143,6 @@ private struct AddExpenseTab: View {
     var onAdd: (TransactionDraft) -> Void
 
     @State private var draft = TransactionDraft()
-    @State private var showingForm = false
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
@@ -196,16 +183,9 @@ private struct AddExpenseTab: View {
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Category")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button("Detailed Form") {
-                                    showingForm = true
-                                }
-                                .font(.footnote.weight(.semibold))
-                            }
+                            Text("Category")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
 
                             CategoryChips(categories: categories, selection: $draft.category)
                         }
@@ -240,21 +220,6 @@ private struct AddExpenseTab: View {
                 .padding(24)
             }
             .navigationTitle("New Expense")
-            .sheet(isPresented: $showingForm) {
-                NavigationStack {
-                    AddExpenseForm(
-                        categories: categories,
-                        quickAddAmount: settings.quickAddAmount,
-                        onSave: { draft in
-                            onAdd(draft)
-                            showingForm = false
-                            self.draft = TransactionDraft(category: categories.first ?? "General")
-                        },
-                        onDismiss: { showingForm = false }
-                    )
-                }
-                .presentationDetents([.medium, .large])
-            }
             .onAppear {
                 if draft.category.isEmpty {
                     draft.category = categories.first ?? "General"
@@ -559,66 +524,6 @@ private struct CategoryChips: View {
                             .foregroundStyle(isSelected ? Color.blue : .primary)
                     }
                 }
-            }
-        }
-    }
-}
-
-private struct AddExpenseForm: View {
-    let categories: [String]
-    let quickAddAmount: Double
-    var onSave: (TransactionDraft) -> Void
-    var onDismiss: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var draft = TransactionDraft()
-
-    var body: some View {
-        Form {
-            Section("Details") {
-                TextField("Amount", text: $draft.amountText)
-                    .keyboardType(.decimalPad)
-                TextField("Title", text: $draft.title)
-                Picker("Category", selection: $draft.category) {
-                    ForEach(categories, id: \.self) { name in
-                        Text(name).tag(name)
-                    }
-                }
-                DatePicker("Date", selection: $draft.date, displayedComponents: .date)
-            }
-
-            Section("Notes") {
-                TextField("Optional note", text: $draft.note, axis: .vertical)
-                    .lineLimit(2...4)
-            }
-
-            Section("Shortcuts") {
-                Button(
-                    "Use quick amount (\(quickAddAmount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))))"
-                ) {
-                    draft.amountText = quickAddAmount.formatted(.number)
-                }
-            }
-        }
-        .navigationTitle("Add Expense")
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    onDismiss()
-                    dismiss()
-                }
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    onSave(draft)
-                    onDismiss()
-                }
-                .disabled(!draft.isValid)
-            }
-        }
-        .onAppear {
-            if draft.category.isEmpty {
-                draft.category = categories.first ?? "General"
             }
         }
     }
