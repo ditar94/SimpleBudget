@@ -24,7 +24,7 @@ struct SimpleBudgetApp: App {
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true,
-            groupContainer: .appGroup(groupIdentifier),
+            groupContainer: .identifier(groupIdentifier),
             cloudKitDatabase: .private(cloudKitIdentifier)
         )
 

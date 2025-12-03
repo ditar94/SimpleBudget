@@ -54,7 +54,7 @@ enum WidgetModelContainer {
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 allowsSave: true,
-                groupContainer: .appGroup(groupIdentifier),
+                groupContainer: .identifier(groupIdentifier),
                 cloudKitDatabase: .private(cloudKitIdentifier)
             )
             return try ModelContainer(for: schema, configurations: [configuration])
