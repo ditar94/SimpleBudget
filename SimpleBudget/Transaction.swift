@@ -61,7 +61,7 @@ final class Transaction {
     var category: String = ""
     var date: Date = Date()
     var notes: String = ""
-    var type: TransactionType = .expense
+    var type: TransactionType = TransactionType.expense
 
     init(
         title: String = "",
@@ -69,7 +69,7 @@ final class Transaction {
         category: String = "",
         date: Date = Date(),
         notes: String = "",
-        type: TransactionType = .expense
+        type: TransactionType = TransactionType.expense
     ) {
         self.title = title
         self.amount = amount
