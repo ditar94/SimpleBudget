@@ -7,17 +7,37 @@
 
 import SwiftUI
 import SwiftData
+import Foundation
 
 @main
 struct SimpleBudgetApp: App {
+    private static let groupIdentifier = "group.com.example.SimpleBudget"
+    private static let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Transaction.self,
+            BudgetSettings.self,
+            BudgetCategory.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let groupContainer: ModelConfiguration.GroupContainer?
+        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
+            groupContainer = .identifier(groupIdentifier)
+        } else {
+            groupContainer = nil
+        }
+
+        let configuration = ModelConfiguration(
+            "shared-config",
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            allowsSave: true,
+            groupContainer: groupContainer,
+            cloudKitDatabase: .private(cloudKitIdentifier)
+        )
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
