@@ -363,19 +363,28 @@ private struct BudgetDial: View {
     let currencyCode: String
 
     @GestureState private var isDragging = false
+    @State private var initialProgress: Double = 0
+    @State private var progressDelta: Double = 0
+    @State private var previousAngle: Double?
 
     private var denominator: Double { displayMaximum > 0 ? displayMaximum : maximum }
     private var progress: Double { denominator > 0 ? amount / denominator : 0 }
-    private var clampedProgress: Double { min(max(progress, 0), 1) }
+    private var primaryTrim: Double { min(max(progress, 0), 1) }
+    private var overdrawTrim: Double { max(progress - 1, 0) }
     private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
     private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
+    private var overageAmount: Double {
+        guard displayMaximum > 0 else { return max(amount, 0) }
+        return max(amount - displayMaximum, 0)
+    }
 
     var body: some View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let radius = size / 2 - 14
-            let endAngle = Angle(degrees: -90 + clampedProgress * 360)
+            let normalizedProgress = max(progress, 0).truncatingRemainder(dividingBy: 1)
+            let endAngle = Angle(degrees: -90 + normalizedProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * radius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * radius
@@ -383,23 +392,38 @@ private struct BudgetDial: View {
 
             ZStack {
                 Circle()
-                    .stroke(Color.blue.opacity(0.15), lineWidth: 18)
+                    .stroke(Color.blue.opacity(0.1), lineWidth: 18)
 
-                let gradient = AngularGradient(
-                    colors: overBudget ? [.red, .black] : [.blue, .black],
+                let fillGradient = AngularGradient(
+                    colors: [Color.blue.opacity(0.35), .blue],
                     center: .center,
                     startAngle: .degrees(-90),
-                    endAngle: .degrees(-90 + clampedProgress * 360)
+                    endAngle: .degrees(-90 + primaryTrim * 360)
                 )
 
                 Circle()
-                    .trim(from: 0, to: clampedProgress)
-                    .stroke(gradient, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .trim(from: 0, to: primaryTrim)
+                    .stroke(fillGradient, style: StrokeStyle(lineWidth: 18, lineCap: .round))
                     .rotationEffect(.degrees(0))
 
                 if overBudget {
+                    let overdraw = min(overdrawTrim, 1)
+
                     Circle()
-                        .stroke(Color.red.opacity(0.25), lineWidth: 18)
+                        .trim(from: 0, to: overdraw)
+                        .stroke(
+                            AngularGradient(
+                                colors: [Color.red.opacity(0.65), .red],
+                                center: .center,
+                                startAngle: .degrees(-90),
+                                endAngle: .degrees(-90 + overdraw * 360)
+                            ),
+                            style: StrokeStyle(lineWidth: 18, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(0))
+
+                    Circle()
+                        .stroke(Color.red.opacity(0.18), lineWidth: 18)
                 }
 
                 Circle()
@@ -410,7 +434,11 @@ private struct BudgetDial: View {
                 VStack(spacing: 6) {
                     Text(amount, format: .currency(code: currencyCode))
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                    Text("Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))")
+                    Text(
+                        overBudget
+                            ? "Over by \(overageAmount, format: .currency(code: currencyCode))"
+                            : "Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))"
+                    )
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -424,19 +452,51 @@ private struct BudgetDial: View {
                     .onChanged { value in
                         updateAmount(from: value.location, in: proxy.size)
                     }
+                    .onEnded { _ in
+                        resetDragState()
+                    }
             )
         }
     }
 
     private func updateAmount(from location: CGPoint, in size: CGSize) {
+        let angle = normalizedAngle(for: location, in: size)
+
+        if previousAngle == nil {
+            previousAngle = angle
+            initialProgress = amount / maximum
+        }
+
+        if let previousAngle {
+            progressDelta += angleDelta(from: previousAngle, to: angle) / 360
+        }
+
+        previousAngle = angle
+
+        let newProgress = max(0, initialProgress + progressDelta)
+        amount = max(0, newProgress * maximum)
+    }
+
+    private func resetDragState() {
+        initialProgress = amount / maximum
+        progressDelta = 0
+        previousAngle = nil
+    }
+
+    private func normalizedAngle(for location: CGPoint, in size: CGSize) -> Double {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
         let angle = atan2(vector.dy, vector.dx) + .pi / 2
         var degrees = angle * 180 / .pi
         if degrees < 0 { degrees += 360 }
-        let newProgress = degrees / 360
-        let clampedAmount = min(maximum * newProgress, maximum)
-        amount = max(0, clampedAmount)
+        return degrees
+    }
+
+    private func angleDelta(from previous: Double, to current: Double) -> Double {
+        var delta = current - previous
+        if delta > 180 { delta -= 360 }
+        if delta < -180 { delta += 360 }
+        return delta
     }
 }
 
