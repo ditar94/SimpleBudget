@@ -61,7 +61,12 @@ final class Transaction {
     var category: String = ""
     var date: Date = Date()
     var notes: String = ""
-    var type: TransactionType = TransactionType.expense
+    var typeRaw: String = TransactionType.expense.rawValue
+
+    var type: TransactionType {
+        get { TransactionType(rawValue: typeRaw) ?? .expense }
+        set { typeRaw = newValue.rawValue }
+    }
 
     init(
         title: String = "",
@@ -76,7 +81,7 @@ final class Transaction {
         self.category = category
         self.date = date
         self.notes = notes
-        self.type = type
+        self.typeRaw = type.rawValue
     }
 
     var monthIdentifier: String {

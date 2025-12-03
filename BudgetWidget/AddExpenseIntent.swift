@@ -3,9 +3,13 @@ import SwiftData
 import WidgetKit
 import Foundation
 
-struct AddExpenseIntent: AppIntent {
+struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Quick Add Expense"
     static var description = IntentDescription("Add an expense from your lock screen or Home Screen widget.")
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Add \(.amount) in \(.category)")
+    }
 
     @Parameter(title: "Amount", default: 20)
     var amount: Double
