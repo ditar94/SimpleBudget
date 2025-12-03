@@ -19,9 +19,8 @@ struct SimpleBudgetApp: App {
         let configuration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            allowsSave: true,
-            groupContainer: .identifier("group.com.example.SimpleBudget"),
-            cloudKitDatabase: .private("iCloud.com.example.SimpleBudget")
+            cloudKitContainerIdentifier: "iCloud.com.example.SimpleBudget",
+            groupContainer: .identifier("group.com.example.SimpleBudget")
         )
 
         do {
