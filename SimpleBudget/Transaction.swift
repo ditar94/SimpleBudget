@@ -56,12 +56,12 @@ extension TransactionType: AppEnum {
 
 @Model
 final class Transaction {
-    var title: String
-    var amount: Double
-    var category: String
-    var date: Date
-    var notes: String
-    var type: TransactionType
+    var title: String = ""
+    var amount: Double = 0
+    var category: String = ""
+    var date: Date = .now
+    var notes: String = ""
+    var type: TransactionType = .expense
 
     init(title: String, amount: Double, category: String, date: Date, notes: String = "", type: TransactionType) {
         self.title = title
