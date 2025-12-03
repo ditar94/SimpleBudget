@@ -5,7 +5,7 @@ import SwiftData
 final class BudgetCategory: Identifiable, Hashable {
     var id: UUID = UUID()
     var name: String = ""
-    @Relationship(inverse: \BudgetSettings.categories) var settings: BudgetSettings?
+    var settings: BudgetSettings?
 
     init(id: UUID = UUID(), name: String = "") {
         self.id = id
@@ -25,13 +25,13 @@ final class BudgetCategory: Identifiable, Hashable {
 final class BudgetSettings {
     var monthlyBudget: Double = 2000
     var quickAddAmount: Double = 20
-    var lastSyncedAt: Date = .now
+    var lastSyncedAt: Date? = Date()
     @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.settings) var categories: [BudgetCategory]? = []
 
     init(
         monthlyBudget: Double = 2000,
         quickAddAmount: Double = 20,
-        lastSyncedAt: Date = .now,
+        lastSyncedAt: Date? = Date(),
         categories: [BudgetCategory]? = []
     ) {
         self.monthlyBudget = monthlyBudget

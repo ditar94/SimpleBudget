@@ -51,14 +51,26 @@ enum WidgetModelContainer {
                 BudgetCategory.self
             ])
             let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
-            let primaryConfiguration = ModelConfiguration(
-                supportsAppGroup ? "widget-config" : "widget-local-config",
-                schema: schema,
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                groupContainer: supportsAppGroup ? .identifier(groupIdentifier) : nil,
-                cloudKitDatabase: .private(cloudKitIdentifier)
-            )
+            let primaryConfiguration: ModelConfiguration = {
+                if supportsAppGroup {
+                    return ModelConfiguration(
+                        "widget-config",
+                        schema: schema,
+                        isStoredInMemoryOnly: false,
+                        allowsSave: true,
+                        groupContainer: .identifier(groupIdentifier),
+                        cloudKitDatabase: .private(cloudKitIdentifier)
+                    )
+                } else {
+                    return ModelConfiguration(
+                        "widget-local-config",
+                        schema: schema,
+                        isStoredInMemoryOnly: false,
+                        allowsSave: true,
+                        cloudKitDatabase: .private(cloudKitIdentifier)
+                    )
+                }
+            }()
 
             do {
                 return try ModelContainer(for: schema, configurations: [primaryConfiguration])

@@ -59,7 +59,7 @@ final class Transaction {
     var title: String = ""
     var amount: Double = 0
     var category: String = ""
-    var date: Date = .now
+    var date: Date = Date()
     var notes: String = ""
     var type: TransactionType = .expense
 
@@ -67,7 +67,7 @@ final class Transaction {
         title: String = "",
         amount: Double = 0,
         category: String = "",
-        date: Date = .now,
+        date: Date = Date(),
         notes: String = "",
         type: TransactionType = .expense
     ) {
