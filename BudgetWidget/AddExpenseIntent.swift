@@ -20,9 +20,6 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     @Parameter(title: "Category", default: "General")
     var category: String
 
-    @Parameter(title: "Type", default: .expense)
-    var type: TransactionType
-
     @Parameter(title: "Note", default: "")
     var note: String
 
@@ -34,8 +31,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
             amount: abs(amount),
             category: category,
             date: .now,
-            notes: note,
-            type: type
+            notes: note
         )
         context.insert(transaction)
         try context.save()

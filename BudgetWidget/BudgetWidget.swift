@@ -30,7 +30,7 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
             let transactions = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
             currentMonthTotal = transactions
                 .filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
-                .reduce(0) { $0 + ($1.type == .expense ? $1.amount : -$1.amount) }
+                .reduce(0) { $0 + $1.amount }
         } else {
             settings = BudgetSettings()
             currentMonthTotal = 0
