@@ -24,18 +24,15 @@ final class BudgetCategory: Identifiable, Hashable {
 @Model
 final class BudgetSettings {
     var monthlyBudget: Double = 2000
-    var quickAddAmount: Double = 20
     var lastSyncedAt: Date
     @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.settings) var categories: [BudgetCategory]? = []
 
     init(
         monthlyBudget: Double = 2000,
-        quickAddAmount: Double = 20,
         lastSyncedAt: Date = Date(),
         categories: [BudgetCategory]? = []
     ) {
         self.monthlyBudget = monthlyBudget
-        self.quickAddAmount = quickAddAmount
         self.lastSyncedAt = lastSyncedAt
         self.categories = categories
     }

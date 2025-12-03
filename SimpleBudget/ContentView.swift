@@ -64,8 +64,7 @@ struct ContentView: View {
                 categories: categoryModels,
                 onAddCategory: addCategory,
                 onDeleteCategory: deleteCategory,
-                onUpdateBudget: updateBudget,
-                onUpdateQuickAmount: updateQuickAmount
+                onUpdateBudget: updateBudget
             )
             .tag(Tab.settings)
             .tabItem {
@@ -74,6 +73,16 @@ struct ContentView: View {
         }
         .onAppear {
             _ = settings
+        }
+        .sheet(isPresented: $isPresentingAddSheet) {
+            NavigationStack {
+                AddExpenseForm(
+                    categories: categories,
+                    onSave: addTransaction,
+                    onDismiss: { isPresentingAddSheet = false }
+                )
+            }
+            .presentationDetents([.medium, .large])
         }
         .toolbarBackground(.visible, for: .tabBar)
     }
@@ -127,10 +136,6 @@ struct ContentView: View {
     private func updateBudget(_ newValue: Double) {
         settings.monthlyBudget = max(0, newValue)
     }
-
-    private func updateQuickAmount(_ newValue: Double) {
-        settings.quickAddAmount = max(0, newValue)
-    }
 }
 
 // MARK: - Add Expense
@@ -158,11 +163,8 @@ private struct AddExpenseTab: View {
                 VStack(alignment: .leading, spacing: 24) {
                     BudgetHeaderCard(
                         remainingBudget: remainingBudget,
-                        currencyCode: Locale.current.currency?.identifier ?? "USD",
-                        quickAmount: settings.quickAddAmount
-                    ) {
-                        draft.setAmount(settings.quickAddAmount)
-                    }
+                        currencyCode: Locale.current.currency?.identifier ?? "USD"
+                    )
 
                     ExpenseDialCard(
                         remainingBudget: remainingBudget,
@@ -209,6 +211,20 @@ private struct AddExpenseTab: View {
                 .padding(24)
             }
             .navigationTitle("New Expense")
+            .sheet(isPresented: $showingForm) {
+                NavigationStack {
+                AddExpenseForm(
+                    categories: categories,
+                    onSave: { draft in
+                        onAdd(draft)
+                        showingForm = false
+                            self.draft = TransactionDraft(category: categories.first ?? "General")
+                        },
+                        onDismiss: { showingForm = false }
+                    )
+                }
+                .presentationDetents([.medium, .large])
+            }
             .onAppear {
                 if draft.category.isEmpty {
                     draft.category = categories.first ?? "General"
@@ -221,8 +237,6 @@ private struct AddExpenseTab: View {
 private struct BudgetHeaderCard: View {
     let remainingBudget: Double
     let currencyCode: String
-    let quickAmount: Double
-    var onQuickFill: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
@@ -236,26 +250,6 @@ private struct BudgetHeaderCard: View {
                 Text("Stay on track with mindful spending.")
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.8))
-            }
-            Spacer()
-            Button(action: onQuickFill) {
-                VStack(spacing: 6) {
-                    Image(systemName: "bolt.fill")
-                        .font(.title3)
-                    Text("Quick")
-                        .font(.caption.weight(.semibold))
-                    Text(quickAmount, format: .currency(code: currencyCode))
-                        .font(.caption2)
-                }
-                .foregroundStyle(.white)
-                .padding(14)
-                .frame(width: 84, height: 84)
-                .background(.white.opacity(0.2))
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(.white.opacity(0.3), lineWidth: 1)
-                )
             }
         }
         .padding(20)
@@ -520,7 +514,6 @@ private struct CategoryChips: View {
 
 private struct AddExpenseForm: View {
     let categories: [String]
-    let quickAddAmount: Double
     var onSave: (TransactionDraft) -> Void
     var onDismiss: () -> Void
 
@@ -543,14 +536,6 @@ private struct AddExpenseForm: View {
             Section("Notes") {
                 TextField("Optional note", text: $draft.note, axis: .vertical)
                     .lineLimit(2...4)
-            }
-
-            Section("Shortcuts") {
-                Button(
-                    "Use quick amount (\(quickAddAmount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))))"
-                ) {
-                    draft.amountText = quickAddAmount.formatted(.number)
-                }
             }
         }
         .navigationTitle("Add Expense")
@@ -827,11 +812,9 @@ private struct SettingsTab: View {
     var onAddCategory: (String) -> Void
     var onDeleteCategory: (BudgetCategory) -> Void
     var onUpdateBudget: (Double) -> Void
-    var onUpdateQuickAmount: (Double) -> Void
 
     @State private var newCategory = ""
     @State private var budgetText: String = ""
-    @State private var quickAmountText: String = ""
 
     var body: some View {
         NavigationStack {
@@ -839,7 +822,6 @@ private struct SettingsTab: View {
                 VStack(spacing: 20) {
                     budgetCard
                     categoriesCard
-                    quickAddCard
                 }
                 .padding()
             }
@@ -953,66 +935,6 @@ private struct SettingsTab: View {
                                 .fill(Color(.systemBackground))
                         )
                 )
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
-    }
-
-    private var quickAddCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Quick Add Mode")
-                    .font(.title3.weight(.semibold))
-                Text("Set a default amount and jump into quick add when you're on the go.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(spacing: 10) {
-                Text(currencySymbol)
-                    .font(.title3.weight(.semibold))
-                    .padding(.leading, 12)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(.systemGray6))
-                    )
-
-                TextField("Preferred quick add", text: Binding(
-                    get: { quickAmountText.isEmpty ? settings.quickAddAmount.formatted(.number) : quickAmountText },
-                    set: { quickAmountText = $0 }
-                ))
-                .keyboardType(.decimalPad)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(.systemGray6))
-                )
-                .onChange(of: quickAmountText) { value in
-                    let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.quickAddAmount
-                    onUpdateQuickAmount(parsed)
-                }
-            }
-
-            Button {
-                let parsed = Double(quickAmountText.replacingOccurrences(of: ",", with: ".")) ?? settings.quickAddAmount
-                onUpdateQuickAmount(max(0, parsed))
-            } label: {
-                Text("Launch Quick Add")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .foregroundStyle(.white)
-                    .background(
-                        LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
         .padding()
