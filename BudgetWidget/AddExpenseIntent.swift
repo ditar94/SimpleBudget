@@ -76,17 +76,15 @@ enum WidgetModelContainer {
                 }
             }()
 
-            do {
-                return try ModelContainer(for: schema, configurations: [primaryConfiguration])
-            } catch {
-                let fallbackConfiguration = ModelConfiguration(
-                    "widget-local-fallback",
-                    schema: schema,
-                    isStoredInMemoryOnly: false,
-                    allowsSave: true
-                )
-                return try ModelContainer(for: schema, configurations: [fallbackConfiguration])
-            }
+            let configuration = ModelConfiguration(
+                "shared-config",
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true,
+                groupContainer: groupContainer,
+                cloudKitDatabase: .private(cloudKitIdentifier)
+            )
+            return try ModelContainer(for: schema, configurations: [configuration])
         }
     }
 }
