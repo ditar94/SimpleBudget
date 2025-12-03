@@ -49,6 +49,7 @@ struct ContentView: View {
 
             MonthlyExpensesTab(
                 transactions: transactions,
+                monthlyBudget: settings.monthlyBudget,
                 selectedMonth: $selectedMonth,
                 onDelete: { offsets, list in
                     deleteTransactions(at: offsets, in: list)
@@ -571,6 +572,7 @@ private struct TransactionDraft {
 
 private struct MonthlyExpensesTab: View {
     let transactions: [Transaction]
+    let monthlyBudget: Double
     @Binding var selectedMonth: Date
     var onDelete: (IndexSet, [Transaction]) -> Void
 
@@ -578,32 +580,131 @@ private struct MonthlyExpensesTab: View {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: selectedMonth, toGranularity: .month) }
     }
 
+    private var monthTotal: Double {
+        monthTransactions.reduce(0) { $0 + $1.amount }
+    }
+
+    private var remaining: Double {
+        monthlyBudget - monthTotal
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    MonthSelector(selectedMonth: $selectedMonth)
-                }
+            ScrollView {
+                VStack(spacing: 16) {
+                    MonthSummaryCard(
+                        month: selectedMonth,
+                        spent: monthTotal,
+                        limit: monthlyBudget,
+                        remaining: remaining
+                    )
 
-                Section("This month") {
-                    if monthTransactions.isEmpty {
-                        ContentUnavailableView(
-                            "No expenses",
-                            systemImage: "tray",
-                            description: Text("Add transactions to see them here.")
-                        )
-                    } else {
-                        ForEach(monthTransactions) { transaction in
-                            TransactionRow(transaction: transaction)
-                        }
-                        .onDelete { offsets in
-                            onDelete(offsets, monthTransactions)
+                    VStack(alignment: .leading, spacing: 12) {
+                        MonthSelector(selectedMonth: $selectedMonth)
+
+                        if monthTransactions.isEmpty {
+                            ContentUnavailableView(
+                                "No expenses",
+                                systemImage: "tray",
+                                description: Text("Add transactions to see them here.")
+                            )
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(Array(monthTransactions.enumerated()), id: \.element.id) { index, transaction in
+                                    TransactionCard(transaction: transaction)
+                                        .swipeActions {
+                                            Button(role: .destructive) {
+                                                onDelete(IndexSet(integer: index), monthTransactions)
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
+                                }
+                            }
                         }
                     }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(.secondarySystemBackground))
+                    )
                 }
+                .padding()
             }
             .navigationTitle("Monthly Expenses")
         }
+    }
+}
+
+private struct MonthSummaryCard: View {
+    let month: Date
+    let spent: Double
+    let limit: Double
+    let remaining: Double
+
+    private var progress: Double {
+        guard limit > 0 else { return 0 }
+        return min(spent / limit, 1)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(month, format: .dateTime.month(.wide).year())
+                        .font(.headline)
+                    Text("Spending overview")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Spent")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(spent, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.title2.weight(.semibold))
+                }
+            }
+
+            ProgressView(value: progress)
+                .tint(remaining >= 0 ? .blue : .red)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(remaining >= 0 ? "Remaining" : "Over limit")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(abs(remaining), format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.headline)
+                        .foregroundStyle(remaining >= 0 ? .blue : .red)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Limit")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(limit, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.headline)
+                }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.15), Color.purple.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
@@ -631,6 +732,59 @@ private struct MonthSelector: View {
                 Image(systemName: "chevron.right")
             }
         }
+    }
+}
+
+private struct TransactionCard: View {
+    let transaction: Transaction
+
+    private var avatarGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(avatarGradient)
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: "creditcard.fill")
+                    .foregroundStyle(.white)
+                    .font(.title3)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(transaction.title)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                Text(transaction.category)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Text(-transaction.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.red)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemBackground))
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
 }
 
