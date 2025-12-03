@@ -169,56 +169,75 @@ private struct AddExpenseTab: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    AmountDialCard(
+                VStack(alignment: .leading, spacing: 24) {
+                    BudgetHeaderCard(
                         remainingBudget: remainingBudget,
                         currencyCode: Locale.current.currency?.identifier ?? "USD",
-                        quickAmount: settings.quickAddAmount,
+                        quickAmount: settings.quickAddAmount
+                    ) {
+                        draft.setAmount(settings.quickAddAmount)
+                    }
+
+                    ExpenseDialCard(
+                        remainingBudget: remainingBudget,
+                        currencyCode: Locale.current.currency?.identifier ?? "USD",
                         draft: $draft
                     )
 
-                    BudgetProgressCard(
-                        monthlyBudget: settings.monthlyBudget,
-                        spent: currentMonthTotal,
-                        previewAmount: draft.amount
-                    )
+                    VStack(alignment: .leading, spacing: 18) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Title")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            TextField("What did you spend on?", text: $draft.title)
+                                .textInputAutocapitalization(.sentences)
+                                .padding()
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemGray6)))
+                        }
 
-                    QuickAddCard(
-                        draft: $draft,
-                        categories: categories,
-                        quickAmount: settings.quickAddAmount,
-                        onAdd: {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Category")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Button("Detailed Form") {
+                                    showingForm = true
+                                }
+                                .font(.footnote.weight(.semibold))
+                            }
+
+                            CategoryChips(categories: categories, selection: $draft.category)
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Note")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            TextField("Optional note", text: $draft.note, axis: .vertical)
+                                .padding()
+                                .lineLimit(1...3)
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemGray6)))
+                        }
+
+                        Button(action: {
                             onAdd(draft)
                             draft = TransactionDraft(category: categories.first ?? "General")
-                        }
-                    )
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("This month")
+                        }) {
+                            Text("Add Expense")
                                 .font(.headline)
-                            Spacer()
-                            Button("Detailed Form") {
-                                showingForm = true
-                            }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .foregroundStyle(.white)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(draft.isValid ? Color.blue : Color.gray.opacity(0.5))
+                                )
                         }
-                        if transactions.isEmpty {
-                        ContentUnavailableView(
-                            "No transactions yet",
-                            systemImage: "tray",
-                            description: Text("Add your first expense to start tracking your budget.")
-                        )
-                        } else {
-                            ForEach(transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }) { transaction in
-                                TransactionRow(transaction: transaction)
-                                    .padding(.horizontal)
-                            }
-                        }
+                        .disabled(!draft.isValid)
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding()
+                .padding(24)
             }
             .navigationTitle("New Expense")
             .sheet(isPresented: $showingForm) {
@@ -236,59 +255,67 @@ private struct AddExpenseTab: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+            .onAppear {
+                if draft.category.isEmpty {
+                    draft.category = categories.first ?? "General"
+                }
+            }
         }
     }
 }
 
-private struct BudgetProgressCard: View {
-    let monthlyBudget: Double
-    let spent: Double
-    let previewAmount: Double
-
-    private var predicted: Double { spent + previewAmount }
-    private var remaining: Double { monthlyBudget - predicted }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("Monthly Budget", systemImage: "dollarsign.circle")
-                    .font(.headline)
-                Spacer()
-                Text(monthlyBudget, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                    .font(.headline)
-            }
-
-            ProgressView(value: min(predicted / max(monthlyBudget, 1), 1))
-                .tint(remaining >= 0 ? .blue : .red)
-
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("Spent so far")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(spent, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                        .font(.title2.weight(.semibold))
-                }
-                Spacer()
-                VStack(alignment: .trailing) {
-                    Text(remaining >= 0 ? "Remaining" : "Over budget")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(abs(remaining), format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(remaining >= 0 ? .blue : .red)
-                }
-            }
-        }
-        .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-}
-
-private struct AmountDialCard: View {
+private struct BudgetHeaderCard: View {
     let remainingBudget: Double
     let currencyCode: String
     let quickAmount: Double
+    var onQuickFill: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Remaining this month")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                Text(remainingBudget, format: .currency(code: currencyCode))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Text("Stay on track with mindful spending.")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            Spacer()
+            Button(action: onQuickFill) {
+                VStack(spacing: 6) {
+                    Image(systemName: "bolt.fill")
+                        .font(.title3)
+                    Text("Quick")
+                        .font(.caption.weight(.semibold))
+                    Text(quickAmount, format: .currency(code: currencyCode))
+                        .font(.caption2)
+                }
+                .foregroundStyle(.white)
+                .padding(14)
+                .frame(width: 84, height: 84)
+                .background(.white.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                )
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        )
+    }
+}
+
+private struct ExpenseDialCard: View {
+    let remainingBudget: Double
+    let currencyCode: String
     @Binding var draft: TransactionDraft
 
     private var amountBinding: Binding<Double> {
@@ -304,19 +331,16 @@ private struct AmountDialCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Set amount")
+                    Text("Set expense amount")
                         .font(.headline)
-                    Text("Scrub around the dial to choose how much to add.")
+                    Text("Drag around the dial to fine-tune your spend.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button {
-                    draft.setAmount(quickAmount)
-                } label: {
-                    Label("Quick fill", systemImage: "bolt.fill")
-                }
-                .buttonStyle(.bordered)
+                Text(Date.now, style: .date)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             BudgetDial(
@@ -325,29 +349,10 @@ private struct AmountDialCard: View {
                 displayMaximum: remainingBudget,
                 currencyCode: currencyCode
             )
-            .frame(height: 220)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Selected")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(draft.amount, format: .currency(code: currencyCode))
-                        .font(.title2.weight(.bold))
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Remaining budget")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(remainingBudget, format: .currency(code: currencyCode))
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(remainingBudget > 0 ? .blue : .red)
-                }
-            }
+            .frame(height: 280)
         }
-        .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(20)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
@@ -363,6 +368,7 @@ private struct BudgetDial: View {
     private var progress: Double { denominator > 0 ? amount / denominator : 0 }
     private var clampedProgress: Double { min(max(progress, 0), 1) }
     private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
+    private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
 
     var body: some View {
         GeometryReader { proxy in
@@ -403,9 +409,9 @@ private struct BudgetDial: View {
 
                 VStack(spacing: 6) {
                     Text(amount, format: .currency(code: currencyCode))
-                        .font(.largeTitle.weight(.bold))
-                    Text("of \(displayMaximum, format: .currency(code: currencyCode))")
-                        .font(.subheadline)
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                    Text("Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))")
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -434,57 +440,36 @@ private struct BudgetDial: View {
     }
 }
 
-private struct QuickAddCard: View {
-    @Binding var draft: TransactionDraft
+private struct CategoryChips: View {
     let categories: [String]
-    let quickAmount: Double
-    var onAdd: () -> Void
+    @Binding var selection: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Quick Add")
-                .font(.headline)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Amount")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(draft.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                        .font(.title3.weight(.semibold))
-                }
-                Spacer()
-                Button(action: {
-                    draft.setAmount(quickAmount)
-                }) {
-                    Label("Quick fill", systemImage: "bolt.fill")
-                }
-                .buttonStyle(.borderedProminent)
-            }
-
-            TextField("What for?", text: $draft.title)
-                .textInputAutocapitalization(.sentences)
-                .textFieldStyle(.roundedBorder)
-
-            Picker("Category", selection: $draft.category) {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
                 ForEach(categories, id: \.self) { name in
-                    Text(name).tag(name)
+                    let isSelected = name == selection
+                    Button {
+                        selection = name
+                    } label: {
+                        Text(name)
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 14)
+                            .frame(minWidth: 64)
+                            .background(
+                                Capsule()
+                                    .fill(isSelected ? Color.blue.opacity(0.15) : Color(.systemGray6))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(isSelected ? Color.blue : Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                            .foregroundStyle(isSelected ? Color.blue : .primary)
+                    }
                 }
             }
-            .pickerStyle(.menu)
-
-            TextField("Optional note", text: $draft.note, axis: .vertical)
-                .lineLimit(1...3)
-
-            Button(action: onAdd) {
-                Label("Save", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!draft.isValid)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
