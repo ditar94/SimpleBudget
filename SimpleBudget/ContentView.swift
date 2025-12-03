@@ -371,6 +371,8 @@ private struct BudgetDial: View {
     private var progress: Double { denominator > 0 ? amount / denominator : 0 }
     private var primaryTrim: Double { min(max(progress, 0), 1) }
     private var overdrawTrim: Double { max(progress - 1, 0) }
+    private var visibleOverdraw: Double { min(overdrawTrim, 1) }
+    private var knobProgress: Double { min(max(progress, 0), 1 + visibleOverdraw) }
     private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
     private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
     private var overageAmount: Double {
@@ -384,8 +386,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let radius = size / 2 - ringWidth / 2
-            let normalizedProgress = max(progress, 0).truncatingRemainder(dividingBy: 1)
-            let endAngle = Angle(degrees: -90 + normalizedProgress * 360)
+            let endAngle = Angle(degrees: -90 + knobProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * radius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * radius
@@ -408,7 +409,7 @@ private struct BudgetDial: View {
                     .rotationEffect(.degrees(0))
 
                 if overBudget {
-                    let overdraw = min(overdrawTrim, 1)
+                    let overdraw = visibleOverdraw
 
                     Circle()
                         .trim(from: 0, to: overdraw)
