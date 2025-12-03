@@ -404,18 +404,7 @@ private struct TransactionDraft {
     var note: String = ""
     var type: TransactionType = .expense
 
-    private static let amountFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale.current
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
-        return formatter
-    }()
-
-    var amount: Double {
-        let sanitized = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return TransactionDraft.amountFormatter.number(from: sanitized)?.doubleValue ?? 0
-    }
+    var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
     var isValid: Bool { amount > 0 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }
 

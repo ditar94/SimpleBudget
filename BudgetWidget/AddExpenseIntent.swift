@@ -8,7 +8,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     static var description = IntentDescription("Add an expense from your lock screen or Home Screen widget.")
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Add \(.amount) in \(.category)")
+        Summary("Add \\(\\.$amount) in \\(\\.$category)")
     }
 
     @Parameter(title: "Amount", default: 20)
@@ -76,15 +76,17 @@ enum WidgetModelContainer {
                 }
             }()
 
-            let configuration = ModelConfiguration(
-                "shared-config",
-                schema: schema,
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                groupContainer: groupContainer,
-                cloudKitDatabase: .private(cloudKitIdentifier)
-            )
-            return try ModelContainer(for: schema, configurations: [configuration])
+            do {
+                return try ModelContainer(for: schema, configurations: [primaryConfiguration])
+            } catch {
+                let fallbackConfiguration = ModelConfiguration(
+                    "widget-local-fallback",
+                    schema: schema,
+                    isStoredInMemoryOnly: false,
+                    allowsSave: true
+                )
+                return try ModelContainer(for: schema, configurations: [fallbackConfiguration])
+            }
         }
     }
 }
