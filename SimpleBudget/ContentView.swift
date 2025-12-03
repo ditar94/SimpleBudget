@@ -650,62 +650,199 @@ private struct SettingsTab: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Monthly Budget") {
-                    TextField("Amount", text: Binding(
-                        get: { budgetText.isEmpty ? settings.monthlyBudget.formatted(.number) : budgetText },
-                        set: { budgetText = $0 }
-                    ))
-                    .keyboardType(.decimalPad)
-                    .onChange(of: budgetText) { value in
-                        let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.monthlyBudget
-                        onUpdateBudget(parsed)
-                    }
+            ScrollView {
+                VStack(spacing: 20) {
+                    budgetCard
+                    categoriesCard
+                    quickAddCard
                 }
-
-                Section("Quick add amount") {
-                    TextField("Preferred quick add", text: Binding(
-                        get: { quickAmountText.isEmpty ? settings.quickAddAmount.formatted(.number) : quickAmountText },
-                        set: { quickAmountText = $0 }
-                    ))
-                    .keyboardType(.decimalPad)
-                    .onChange(of: quickAmountText) { value in
-                        let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.quickAddAmount
-                        onUpdateQuickAmount(parsed)
-                    }
-                }
-
-                Section("Categories") {
-                    ForEach(categories) { category in
-                        HStack {
-                            Text(category.name)
-                            Spacer()
-                            Button(role: .destructive) {
-                                onDeleteCategory(category)
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                    }
-                    HStack {
-                        TextField("New category", text: $newCategory)
-                        Button("Add") {
-                            onAddCategory(newCategory)
-                            newCategory = ""
-                        }
-                        .disabled(newCategory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                }
-
-                Section("iCloud") {
-                    Label("Data syncs securely with iCloud using CloudKit", systemImage: "icloud")
-                        .foregroundStyle(.secondary)
-                        .font(.callout)
-                }
+                .padding()
             }
             .navigationTitle("Settings")
         }
+    }
+
+    private var currencySymbol: String { Locale.current.currencySymbol ?? "$" }
+
+    private var budgetCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Monthly Budget")
+                    .font(.title3.weight(.semibold))
+                Text("Set the amount you want to keep an eye on each month.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 10) {
+                Text(currencySymbol)
+                    .font(.title3.weight(.semibold))
+                    .padding(.leading, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(.systemGray6))
+                    )
+
+                TextField("0", text: Binding(
+                    get: { budgetText.isEmpty ? settings.monthlyBudget.formatted(.number) : budgetText },
+                    set: { budgetText = $0 }
+                ))
+                .keyboardType(.decimalPad)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.systemGray6))
+                )
+                .onChange(of: budgetText) { value in
+                    let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.monthlyBudget
+                    onUpdateBudget(parsed)
+                }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    private var categoriesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Categories")
+                    .font(.title3.weight(.semibold))
+                Text("Organize where your money is going by keeping categories tidy.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], spacing: 12) {
+                ForEach(categories) { category in
+                    HStack(spacing: 8) {
+                        Text(category.name)
+                            .font(.callout.weight(.semibold))
+                        Spacer(minLength: 0)
+                        Button {
+                            onDeleteCategory(category)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.caption.bold())
+                                .padding(6)
+                                .background(Circle().fill(Color(.systemGray5)))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.primary)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                        .font(.callout.weight(.semibold))
+                    TextField("Add category", text: $newCategory)
+                        .submitLabel(.done)
+                        .onSubmit(addCategory)
+                    Button(action: addCategory) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title3.weight(.semibold))
+                    }
+                    .disabled(newCategory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.blue)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.blue.opacity(0.4), lineWidth: 1.5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color(.systemBackground))
+                        )
+                )
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    private var quickAddCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Quick Add Mode")
+                    .font(.title3.weight(.semibold))
+                Text("Set a default amount and jump into quick add when you're on the go.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 10) {
+                Text(currencySymbol)
+                    .font(.title3.weight(.semibold))
+                    .padding(.leading, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(.systemGray6))
+                    )
+
+                TextField("Preferred quick add", text: Binding(
+                    get: { quickAmountText.isEmpty ? settings.quickAddAmount.formatted(.number) : quickAmountText },
+                    set: { quickAmountText = $0 }
+                ))
+                .keyboardType(.decimalPad)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.systemGray6))
+                )
+                .onChange(of: quickAmountText) { value in
+                    let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.quickAddAmount
+                    onUpdateQuickAmount(parsed)
+                }
+            }
+
+            Button {
+                let parsed = Double(quickAmountText.replacingOccurrences(of: ",", with: ".")) ?? settings.quickAddAmount
+                onUpdateQuickAmount(max(0, parsed))
+            } label: {
+                Text("Launch Quick Add")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(.white)
+                    .background(
+                        LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    private func addCategory() {
+        let trimmed = newCategory.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onAddCategory(trimmed)
+        newCategory = ""
     }
 }
 
