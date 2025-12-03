@@ -10,6 +10,9 @@ import SwiftData
 
 @main
 struct SimpleBudgetApp: App {
+    private static let groupIdentifier = "group.com.example.SimpleBudget"
+    private static let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transaction.self,
@@ -17,12 +20,12 @@ struct SimpleBudgetApp: App {
             BudgetCategory.self
         ])
         let configuration = ModelConfiguration(
-            nil,
+            "shared-config",
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true,
-            groupContainer: .identifier("group.com.example.SimpleBudget"),
-            cloudKitDatabase: .private("iCloud.com.example.SimpleBudget")
+            groupContainer: .appGroup(groupIdentifier),
+            cloudKitDatabase: .private(cloudKitIdentifier)
         )
 
         do {

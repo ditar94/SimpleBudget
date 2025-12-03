@@ -42,18 +42,20 @@ struct AddExpenseIntent: AppIntent {
 enum WidgetModelContainer {
     static var shared: ModelContainer {
         get throws {
+            let groupIdentifier = "group.com.example.SimpleBudget"
+            let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
             let schema = Schema([
                 Transaction.self,
                 BudgetSettings.self,
                 BudgetCategory.self
             ])
             let configuration = ModelConfiguration(
-                nil,
+                "widget-config",
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 allowsSave: true,
-                groupContainer: .identifier("group.com.example.SimpleBudget"),
-                cloudKitDatabase: .private("iCloud.com.example.SimpleBudget")
+                groupContainer: .appGroup(groupIdentifier),
+                cloudKitDatabase: .private(cloudKitIdentifier)
             )
             return try ModelContainer(for: schema, configurations: [configuration])
         }
