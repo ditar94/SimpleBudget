@@ -16,7 +16,6 @@ struct ContentView: View {
 
     @State private var selectedTab: Tab = .add
     @State private var selectedMonth: Date = .now
-    @State private var isPresentingAddSheet = false
 
     private var settings: BudgetSettings {
         if let settings = settingsCollection.first {
@@ -92,7 +91,6 @@ struct ContentView: View {
         guard draft.isValid else { return }
 
         let transaction = Transaction(
-            title: draft.title,
             amount: draft.amount,
             category: draft.category,
             date: draft.date,
@@ -149,7 +147,6 @@ private struct AddExpenseTab: View {
     var onAdd: (TransactionDraft) -> Void
 
     @State private var draft = TransactionDraft()
-    @State private var showingForm = false
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
@@ -176,27 +173,10 @@ private struct AddExpenseTab: View {
                     )
 
                     VStack(alignment: .leading, spacing: 18) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Title")
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Category")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.secondary)
-                            TextField("What did you spend on?", text: $draft.title)
-                                .textInputAutocapitalization(.sentences)
-                                .padding()
-                                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemGray6)))
-                        }
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Category")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button("Detailed Form") {
-                                    showingForm = true
-                                }
-                                .font(.footnote.weight(.semibold))
-                            }
 
                             CategoryChips(categories: categories, selection: $draft.category)
                         }
@@ -341,7 +321,14 @@ private struct BudgetDial: View {
     private var overdrawTrim: Double { max(progress - 1, 0) }
     private var visibleOverdraw: Double { min(overdrawTrim, 1) }
     private var completedOverdrawWraps: Double { floor(overdrawTrim) }
-    private var knobProgress: Double { max(progress, 0) }
+    private var knobDisplayProgress: Double {
+        let normalized = max(progress, 0)
+        let wrapped = normalized.truncatingRemainder(dividingBy: 1)
+
+        if normalized == 0 { return 0 }
+        if normalized <= 1 { return normalized }
+        return wrapped == 0 ? 1 : wrapped
+    }
     private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
     private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
     private var overageAmount: Double {
@@ -355,7 +342,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let radius = size / 2 - ringWidth / 2
-            let endAngle = Angle(degrees: -90 + wrappedKnobProgress * 360)
+            let endAngle = Angle(degrees: -90 + knobDisplayProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * radius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * radius
@@ -538,7 +525,6 @@ private struct AddExpenseForm: View {
             Section("Details") {
                 TextField("Amount", text: $draft.amountText)
                     .keyboardType(.decimalPad)
-                TextField("Title", text: $draft.title)
                 Picker("Category", selection: $draft.category) {
                     ForEach(categories, id: \.self) { name in
                         Text(name).tag(name)
@@ -577,14 +563,13 @@ private struct AddExpenseForm: View {
 }
 
 private struct TransactionDraft {
-    var title: String = ""
     var amountText: String = ""
     var category: String = BudgetSettings.defaultCategories.first ?? "General"
     var date: Date = .now
     var note: String = ""
 
     var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
-    var isValid: Bool { amount > 0 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var isValid: Bool { amount > 0 && !category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     mutating func setAmount(_ value: Double) {
         let formatter = NumberFormatter()
@@ -787,13 +772,16 @@ private struct TransactionCard: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(transaction.title)
+                Text(transaction.category)
                     .font(.headline)
                     .lineLimit(1)
 
-                Text(transaction.category)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(transaction.notes)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
 
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
                     .font(.caption)
@@ -982,14 +970,11 @@ private struct TransactionRow: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.title)
-                    .font(.headline)
                 Text(transaction.category)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.headline)
                 if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(transaction.notes)
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
