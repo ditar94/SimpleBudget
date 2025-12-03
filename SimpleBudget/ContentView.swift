@@ -16,7 +16,6 @@ struct ContentView: View {
 
     @State private var selectedTab: Tab = .add
     @State private var selectedMonth: Date = .now
-    @State private var isPresentingAddSheet = false
 
     private var settings: BudgetSettings {
         if let settings = settingsCollection.first {
@@ -75,17 +74,6 @@ struct ContentView: View {
         }
         .onAppear {
             _ = settings
-        }
-        .sheet(isPresented: $isPresentingAddSheet) {
-            NavigationStack {
-                AddExpenseForm(
-                    categories: categories,
-                    quickAddAmount: settings.quickAddAmount,
-                    onSave: addTransaction,
-                    onDismiss: { isPresentingAddSheet = false }
-                )
-            }
-            .presentationDetents([.medium, .large])
         }
         .toolbarBackground(.visible, for: .tabBar)
     }
@@ -154,7 +142,6 @@ private struct AddExpenseTab: View {
     var onAdd: (TransactionDraft) -> Void
 
     @State private var draft = TransactionDraft()
-    @State private var showingForm = false
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
@@ -185,16 +172,9 @@ private struct AddExpenseTab: View {
 
                     VStack(alignment: .leading, spacing: 18) {
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Category")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button("Detailed Form") {
-                                    showingForm = true
-                                }
-                                .font(.footnote.weight(.semibold))
-                            }
+                            Text("Category")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
 
                             CategoryChips(categories: categories, selection: $draft.category)
                         }
@@ -229,21 +209,6 @@ private struct AddExpenseTab: View {
                 .padding(24)
             }
             .navigationTitle("New Expense")
-            .sheet(isPresented: $showingForm) {
-                NavigationStack {
-                    AddExpenseForm(
-                        categories: categories,
-                        quickAddAmount: settings.quickAddAmount,
-                        onSave: { draft in
-                            onAdd(draft)
-                            showingForm = false
-                            self.draft = TransactionDraft(category: categories.first ?? "General")
-                        },
-                        onDismiss: { showingForm = false }
-                    )
-                }
-                .presentationDetents([.medium, .large])
-            }
             .onAppear {
                 if draft.category.isEmpty {
                     draft.category = categories.first ?? "General"
@@ -362,7 +327,14 @@ private struct BudgetDial: View {
     private var overdrawTrim: Double { max(progress - 1, 0) }
     private var visibleOverdraw: Double { min(overdrawTrim, 1) }
     private var completedOverdrawWraps: Double { floor(overdrawTrim) }
-    private var knobProgress: Double { max(progress, 0) }
+    private var knobDisplayProgress: Double {
+        let normalized = max(progress, 0)
+        let wrapped = normalized.truncatingRemainder(dividingBy: 1)
+
+        if normalized == 0 { return 0 }
+        if normalized <= 1 { return normalized }
+        return wrapped == 0 ? 1 : wrapped
+    }
     private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
     private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
     private var overageAmount: Double {
@@ -376,7 +348,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let radius = size / 2 - ringWidth / 2
-            let endAngle = Angle(degrees: -90 + wrappedKnobProgress * 360)
+            let endAngle = Angle(degrees: -90 + knobDisplayProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * radius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * radius
