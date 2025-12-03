@@ -25,13 +25,13 @@ final class BudgetCategory: Identifiable, Hashable {
 final class BudgetSettings {
     var monthlyBudget: Double = 2000
     var quickAddAmount: Double = 20
-    var lastSyncedAt: Date? = Date()
+    var lastSyncedAt: Date
     @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.settings) var categories: [BudgetCategory]? = []
 
     init(
         monthlyBudget: Double = 2000,
         quickAddAmount: Double = 20,
-        lastSyncedAt: Date? = Date(),
+        lastSyncedAt: Date = Date(),
         categories: [BudgetCategory]? = []
     ) {
         self.monthlyBudget = monthlyBudget
@@ -52,7 +52,8 @@ extension BudgetSettings {
     ]
 
     static func bootstrap(in context: ModelContext) -> BudgetSettings {
-        if let existing = try? context.fetch(FetchDescriptor<BudgetSettings>()).first {
+        if let list = try? context.fetch(FetchDescriptor<BudgetSettings>()),
+           let existing = list.first {
             return existing
         }
 
