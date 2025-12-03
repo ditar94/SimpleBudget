@@ -387,7 +387,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let radius = size / 2 - ringWidth / 2
-            let endAngle = Angle(degrees: -90 + knobProgress * 360)
+            let endAngle = Angle(degrees: -90 + wrappedKnobProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * radius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * radius
