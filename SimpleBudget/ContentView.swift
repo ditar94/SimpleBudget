@@ -409,19 +409,37 @@ private struct BudgetDial: View {
 
                 if overBudget {
                     let overdraw = min(overdrawTrim, 1)
+                    let overdrawStart = primaryTrim
+                    let overdrawEnd = overdrawStart + overdraw
+
+                    let firstSegmentEnd = min(overdrawEnd, 1)
+                    let wraparoundAmount = max(overdrawEnd - 1, 0)
 
                     Circle()
-                        .trim(from: 0, to: overdraw)
+                        .trim(from: overdrawStart, to: firstSegmentEnd)
                         .stroke(
                             AngularGradient(
                                 colors: [Color.red.opacity(0.65), .red],
                                 center: .center,
-                                startAngle: .degrees(-90),
-                                endAngle: .degrees(-90 + overdraw * 360)
+                                startAngle: .degrees(-90 + overdrawStart * 360),
+                                endAngle: .degrees(-90 + firstSegmentEnd * 360)
                             ),
                             style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
                         )
-                        .rotationEffect(.degrees(0))
+
+                    if wraparoundAmount > 0 {
+                        Circle()
+                            .trim(from: 0, to: min(wraparoundAmount, 1))
+                            .stroke(
+                                AngularGradient(
+                                    colors: [Color.red.opacity(0.65), .red],
+                                    center: .center,
+                                    startAngle: .degrees(-90),
+                                    endAngle: .degrees(-90 + min(wraparoundAmount, 1) * 360)
+                                ),
+                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+                            )
+                    }
 
                     Circle()
                         .stroke(Color.red.opacity(0.18), lineWidth: ringWidth)
