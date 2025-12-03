@@ -1,6 +1,7 @@
 import AppIntents
 import SwiftData
 import WidgetKit
+import Foundation
 
 struct AddExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Quick Add Expense"
@@ -49,12 +50,19 @@ enum WidgetModelContainer {
                 BudgetSettings.self,
                 BudgetCategory.self
             ])
+            let groupContainer: ModelConfiguration.GroupContainer?
+            if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
+                groupContainer = .identifier(groupIdentifier)
+            } else {
+                groupContainer = nil
+            }
+
             let configuration = ModelConfiguration(
                 "widget-config",
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 allowsSave: true,
-                groupContainer: .identifier(groupIdentifier),
+                groupContainer: groupContainer,
                 cloudKitDatabase: .private(cloudKitIdentifier)
             )
             return try ModelContainer(for: schema, configurations: [configuration])

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Foundation
 
 @main
 struct SimpleBudgetApp: App {
@@ -19,12 +20,19 @@ struct SimpleBudgetApp: App {
             BudgetSettings.self,
             BudgetCategory.self
         ])
+        let groupContainer: ModelConfiguration.GroupContainer?
+        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
+            groupContainer = .identifier(groupIdentifier)
+        } else {
+            groupContainer = nil
+        }
+
         let configuration = ModelConfiguration(
             "shared-config",
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true,
-            groupContainer: .identifier(groupIdentifier),
+            groupContainer: groupContainer,
             cloudKitDatabase: .private(cloudKitIdentifier)
         )
 
