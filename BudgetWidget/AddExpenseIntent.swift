@@ -58,7 +58,7 @@ enum WidgetModelContainer {
             }
 
             let configuration = ModelConfiguration(
-                "widget-config",
+                "shared-config",
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 allowsSave: true,
