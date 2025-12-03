@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import AppIntents
 
-enum TransactionType: String, Codable, CaseIterable {
+enum TransactionType: String, Codable, CaseIterable, Sendable {
     case expense
     case income
 
@@ -42,11 +42,11 @@ enum TransactionType: String, Codable, CaseIterable {
 }
 
 extension TransactionType: AppEnum {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation {
+    nonisolated static var typeDisplayRepresentation: TypeDisplayRepresentation {
         "Transaction Type"
     }
 
-    static var caseDisplayRepresentations: [TransactionType: DisplayRepresentation] {
+    nonisolated static var caseDisplayRepresentations: [TransactionType: DisplayRepresentation] {
         [
             .expense: "Expense",
             .income: "Income"
