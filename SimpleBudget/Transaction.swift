@@ -63,7 +63,14 @@ final class Transaction {
     var notes: String = ""
     var type: TransactionType = .expense
 
-    init(title: String, amount: Double, category: String, date: Date, notes: String = "", type: TransactionType) {
+    init(
+        title: String = "",
+        amount: Double = 0,
+        category: String = "",
+        date: Date = .now,
+        notes: String = "",
+        type: TransactionType = .expense
+    ) {
         self.title = title
         self.amount = amount
         self.category = category
