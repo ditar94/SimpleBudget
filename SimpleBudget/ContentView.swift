@@ -382,7 +382,8 @@ private struct BudgetDial: View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            let radius = size / 2 - 14
+            let ringWidth: CGFloat = 18
+            let radius = size / 2 - ringWidth / 2
             let normalizedProgress = max(progress, 0).truncatingRemainder(dividingBy: 1)
             let endAngle = Angle(degrees: -90 + normalizedProgress * 360)
             let endPoint = CGPoint(
@@ -392,7 +393,7 @@ private struct BudgetDial: View {
 
             ZStack {
                 Circle()
-                    .stroke(Color.blue.opacity(0.1), lineWidth: 18)
+                    .stroke(Color.blue.opacity(0.1), lineWidth: ringWidth)
 
                 let fillGradient = AngularGradient(
                     colors: [Color.blue.opacity(0.35), .blue],
@@ -403,7 +404,7 @@ private struct BudgetDial: View {
 
                 Circle()
                     .trim(from: 0, to: primaryTrim)
-                    .stroke(fillGradient, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
                     .rotationEffect(.degrees(0))
 
                 if overBudget {
@@ -418,12 +419,12 @@ private struct BudgetDial: View {
                                 startAngle: .degrees(-90),
                                 endAngle: .degrees(-90 + overdraw * 360)
                             ),
-                            style: StrokeStyle(lineWidth: 18, lineCap: .round)
+                            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
                         )
                         .rotationEffect(.degrees(0))
 
                     Circle()
-                        .stroke(Color.red.opacity(0.18), lineWidth: 18)
+                        .stroke(Color.red.opacity(0.18), lineWidth: ringWidth)
                 }
 
                 Circle()
