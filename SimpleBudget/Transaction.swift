@@ -10,20 +10,17 @@ import SwiftData
 
 @Model
 final class Transaction {
-    var title: String = ""
     var amount: Double = 0
     var category: String = ""
     var date: Date = Date()
     var notes: String = ""
 
     init(
-        title: String = "",
         amount: Double = 0,
         category: String = "",
         date: Date = Date(),
         notes: String = ""
     ) {
-        self.title = title
         self.amount = amount
         self.category = category
         self.date = date
