@@ -278,52 +278,113 @@ private struct QuickAddCard: View {
     var onAdd: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Quick Add")
-                .font(.headline)
-            HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Quick Add")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text("Fast entry with your usual picks")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
                 Picker("Type", selection: $draft.type) {
                     ForEach(TransactionType.allCases, id: \.self) { type in
                         Text(type.title).tag(type)
                     }
                 }
                 .pickerStyle(.segmented)
+                .frame(width: 170)
             }
 
-            HStack {
-                TextField("Amount", text: $draft.amountText)
-                    .keyboardType(.decimalPad)
-                Button(action: {
-                    draft.amountText = quickAmount.formatted(.number)
-                }) {
-                    Label("Fill", systemImage: "bolt.fill")
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Amount")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Text(Locale.current.currency?.symbol ?? "$")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.blue)
+                    TextField("0", text: $draft.amountText)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.leading)
+                        .minimumScaleFactor(0.6)
+                    Spacer()
+                    Button(action: {
+                        draft.amountText = quickAmount.formatted(.number)
+                    }) {
+                        Label("Quick", systemImage: "bolt.fill")
+                            .labelStyle(.iconOnly)
+                            .padding(10)
+                            .background(Color.blue.opacity(0.1), in: Circle())
+                    }
+                    .accessibilityLabel("Fill quick amount")
                 }
-                .buttonStyle(.borderedProminent)
+                .padding()
+                .background(Color.blue.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
 
-            TextField("What for?", text: $draft.title)
-                .textInputAutocapitalization(.sentences)
-                .textFieldStyle(.roundedBorder)
-
-            Picker("Category", selection: $draft.category) {
-                ForEach(categories, id: \.self) { name in
-                    Text(name).tag(name)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Category")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(categories, id: \.self) { name in
+                            let isSelected = name == draft.category
+                            Button {
+                                draft.category = name
+                            } label: {
+                                Text(name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 14)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            .fill(isSelected ? Color.blue.opacity(0.15) : Color(.systemGray6))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1)
+                                    )
+                                    .foregroundStyle(isSelected ? Color.blue : Color.primary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
             }
-            .pickerStyle(.menu)
 
-            TextField("Optional note", text: $draft.note, axis: .vertical)
-                .lineLimit(1...3)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Details")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("What for?", text: $draft.title)
+                    .textInputAutocapitalization(.sentences)
+                    .padding()
+                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                TextField("Optional note", text: $draft.note, axis: .vertical)
+                    .lineLimit(1...3)
+                    .padding()
+                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
 
             Button(action: onAdd) {
                 Label("Save", systemImage: "plus")
                     .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(draft.isValid ? Color.blue : Color.gray.opacity(0.3))
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
             .disabled(!draft.isValid)
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
@@ -400,7 +461,18 @@ private struct TransactionDraft {
     var note: String = ""
     var type: TransactionType = .expense
 
-    var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
+    private static let amountFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale.current
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 2
+        return formatter
+    }()
+
+    var amount: Double {
+        let sanitized = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return TransactionDraft.amountFormatter.number(from: sanitized)?.doubleValue ?? 0
+    }
     var isValid: Bool { amount > 0 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }
 
