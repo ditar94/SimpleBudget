@@ -94,7 +94,6 @@ struct ContentView: View {
         guard draft.isValid else { return }
 
         let transaction = Transaction(
-            title: draft.title,
             amount: draft.amount,
             category: draft.category,
             date: draft.date,
@@ -185,16 +184,6 @@ private struct AddExpenseTab: View {
                     )
 
                     VStack(alignment: .leading, spacing: 18) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Title")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            TextField("What did you spend on?", text: $draft.title)
-                                .textInputAutocapitalization(.sentences)
-                                .padding()
-                                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemGray6)))
-                        }
-
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Category")
@@ -571,7 +560,6 @@ private struct AddExpenseForm: View {
             Section("Details") {
                 TextField("Amount", text: $draft.amountText)
                     .keyboardType(.decimalPad)
-                TextField("Title", text: $draft.title)
                 Picker("Category", selection: $draft.category) {
                     ForEach(categories, id: \.self) { name in
                         Text(name).tag(name)
@@ -618,14 +606,13 @@ private struct AddExpenseForm: View {
 }
 
 private struct TransactionDraft {
-    var title: String = ""
     var amountText: String = ""
     var category: String = BudgetSettings.defaultCategories.first ?? "General"
     var date: Date = .now
     var note: String = ""
 
     var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
-    var isValid: Bool { amount > 0 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var isValid: Bool { amount > 0 && !category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     mutating func setAmount(_ value: Double) {
         let formatter = NumberFormatter()
@@ -828,13 +815,16 @@ private struct TransactionCard: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(transaction.title)
+                Text(transaction.category)
                     .font(.headline)
                     .lineLimit(1)
 
-                Text(transaction.category)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(transaction.notes)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
 
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
                     .font(.caption)
@@ -1086,14 +1076,11 @@ private struct TransactionRow: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.title)
-                    .font(.headline)
                 Text(transaction.category)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.headline)
                 if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(transaction.notes)
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
