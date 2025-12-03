@@ -20,21 +20,25 @@ struct SimpleBudgetApp: App {
             BudgetSettings.self,
             BudgetCategory.self
         ])
-        let groupContainer: ModelConfiguration.GroupContainer?
+        let configuration: ModelConfiguration
         if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
-            groupContainer = .identifier(groupIdentifier)
+            configuration = ModelConfiguration(
+                "shared-config",
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true,
+                groupContainer: .identifier(groupIdentifier),
+                cloudKitDatabase: .private(cloudKitIdentifier)
+            )
         } else {
-            groupContainer = nil
+            configuration = ModelConfiguration(
+                "local-config",
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true,
+                cloudKitDatabase: .private(cloudKitIdentifier)
+            )
         }
-
-        let configuration = ModelConfiguration(
-            "shared-config",
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            allowsSave: true,
-            groupContainer: groupContainer,
-            cloudKitDatabase: .private(cloudKitIdentifier)
-        )
 
         do {
             return try ModelContainer(for: schema, configurations: [configuration])
