@@ -162,10 +162,21 @@ private struct AddExpenseTab: View {
             .reduce(0) { $0 + $1.amount }
     }
 
+    private var remainingBudget: Double {
+        max(settings.monthlyBudget - currentMonthTotal, 0)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    AmountDialCard(
+                        remainingBudget: remainingBudget,
+                        currencyCode: Locale.current.currency?.identifier ?? "USD",
+                        quickAmount: settings.quickAddAmount,
+                        draft: $draft
+                    )
+
                     BudgetProgressCard(
                         monthlyBudget: settings.monthlyBudget,
                         spent: currentMonthTotal,
@@ -274,6 +285,155 @@ private struct BudgetProgressCard: View {
     }
 }
 
+private struct AmountDialCard: View {
+    let remainingBudget: Double
+    let currencyCode: String
+    let quickAmount: Double
+    @Binding var draft: TransactionDraft
+
+    private var amountBinding: Binding<Double> {
+        Binding(
+            get: { draft.amount },
+            set: { newValue in
+                draft.setAmount(newValue)
+            }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Set amount")
+                        .font(.headline)
+                    Text("Scrub around the dial to choose how much to add.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button {
+                    draft.setAmount(quickAmount)
+                } label: {
+                    Label("Quick fill", systemImage: "bolt.fill")
+                }
+                .buttonStyle(.bordered)
+            }
+
+            BudgetDial(
+                amount: amountBinding,
+                maximum: max(remainingBudget, 0.01),
+                displayMaximum: remainingBudget,
+                currencyCode: currencyCode
+            )
+            .frame(height: 220)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Selected")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(draft.amount, format: .currency(code: currencyCode))
+                        .font(.title2.weight(.bold))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Remaining budget")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(remainingBudget, format: .currency(code: currencyCode))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(remainingBudget > 0 ? .blue : .red)
+                }
+            }
+        }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct BudgetDial: View {
+    @Binding var amount: Double
+    let maximum: Double
+    let displayMaximum: Double
+    let currencyCode: String
+
+    @GestureState private var isDragging = false
+
+    private var denominator: Double { displayMaximum > 0 ? displayMaximum : maximum }
+    private var progress: Double { denominator > 0 ? amount / denominator : 0 }
+    private var clampedProgress: Double { min(max(progress, 0), 1) }
+    private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = min(proxy.size.width, proxy.size.height)
+            let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            let radius = size / 2 - 14
+            let endAngle = Angle(degrees: -90 + clampedProgress * 360)
+            let endPoint = CGPoint(
+                x: center.x + cos(CGFloat(endAngle.radians)) * radius,
+                y: center.y + sin(CGFloat(endAngle.radians)) * radius
+            )
+
+            ZStack {
+                Circle()
+                    .stroke(Color.blue.opacity(0.15), lineWidth: 18)
+
+                let gradient = AngularGradient(
+                    colors: overBudget ? [.red, .black] : [.blue, .black],
+                    center: .center,
+                    startAngle: .degrees(-90),
+                    endAngle: .degrees(-90 + clampedProgress * 360)
+                )
+
+                Circle()
+                    .trim(from: 0, to: clampedProgress)
+                    .stroke(gradient, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .rotationEffect(.degrees(0))
+
+                if overBudget {
+                    Circle()
+                        .stroke(Color.red.opacity(0.25), lineWidth: 18)
+                }
+
+                Circle()
+                    .fill(overBudget ? Color.red : Color.black)
+                    .frame(width: 16, height: 16)
+                    .position(endPoint)
+
+                VStack(spacing: 6) {
+                    Text(amount, format: .currency(code: currencyCode))
+                        .font(.largeTitle.weight(.bold))
+                    Text("of \(displayMaximum, format: .currency(code: currencyCode))")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($isDragging) { _, state, _ in
+                        state = true
+                    }
+                    .onChanged { value in
+                        updateAmount(from: value.location, in: proxy.size)
+                    }
+            )
+        }
+    }
+
+    private func updateAmount(from location: CGPoint, in size: CGSize) {
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
+        let angle = atan2(vector.dy, vector.dx) + .pi / 2
+        var degrees = angle * 180 / .pi
+        if degrees < 0 { degrees += 360 }
+        let newProgress = degrees / 360
+        let clampedAmount = min(maximum * newProgress, maximum)
+        amount = max(0, clampedAmount)
+    }
+}
+
 private struct QuickAddCard: View {
     @Binding var draft: TransactionDraft
     let categories: [String]
@@ -286,12 +446,18 @@ private struct QuickAddCard: View {
                 .font(.headline)
 
             HStack {
-                TextField("Amount", text: $draft.amountText)
-                    .keyboardType(.decimalPad)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Amount")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(draft.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.title3.weight(.semibold))
+                }
+                Spacer()
                 Button(action: {
-                    draft.amountText = quickAmount.formatted(.number)
+                    draft.setAmount(quickAmount)
                 }) {
-                    Label("Fill", systemImage: "bolt.fill")
+                    Label("Quick fill", systemImage: "bolt.fill")
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -391,6 +557,15 @@ private struct TransactionDraft {
 
     var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
     var isValid: Bool { amount > 0 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    mutating func setAmount(_ value: Double) {
+        let formatter = NumberFormatter()
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
+        formatter.locale = Locale.current
+        formatter.numberStyle = .decimal
+        amountText = formatter.string(from: NSNumber(value: max(0, value))) ?? ""
+    }
 }
 
 // MARK: - Monthly overview
