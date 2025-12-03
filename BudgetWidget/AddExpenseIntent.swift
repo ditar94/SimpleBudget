@@ -3,9 +3,13 @@ import SwiftData
 import WidgetKit
 import Foundation
 
-struct AddExpenseIntent: AppIntent {
+struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Quick Add Expense"
     static var description = IntentDescription("Add an expense from your lock screen or Home Screen widget.")
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Add \(.amount) in \(.category)")
+    }
 
     @Parameter(title: "Amount", default: 20)
     var amount: Double
@@ -50,12 +54,27 @@ enum WidgetModelContainer {
                 BudgetSettings.self,
                 BudgetCategory.self
             ])
-            let groupContainer: ModelConfiguration.GroupContainer?
-            if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
-                groupContainer = .identifier(groupIdentifier)
-            } else {
-                groupContainer = nil
-            }
+            let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
+            let primaryConfiguration: ModelConfiguration = {
+                if supportsAppGroup {
+                    return ModelConfiguration(
+                        "widget-config",
+                        schema: schema,
+                        isStoredInMemoryOnly: false,
+                        allowsSave: true,
+                        groupContainer: .identifier(groupIdentifier),
+                        cloudKitDatabase: .private(cloudKitIdentifier)
+                    )
+                } else {
+                    return ModelConfiguration(
+                        "widget-local-config",
+                        schema: schema,
+                        isStoredInMemoryOnly: false,
+                        allowsSave: true,
+                        cloudKitDatabase: .private(cloudKitIdentifier)
+                    )
+                }
+            }()
 
             let configuration = ModelConfiguration(
                 "shared-config",

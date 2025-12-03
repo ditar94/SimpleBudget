@@ -123,13 +123,17 @@ struct ContentView: View {
         guard !categoryModels.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return }
 
         let category = BudgetCategory(name: trimmed)
+        category.settings = settings
         modelContext.insert(category)
-        settings.categories.append(category)
+        var updated = settings.categories ?? []
+        updated.append(category)
+        settings.categories = updated
     }
 
     private func deleteCategory(_ category: BudgetCategory) {
-        if let index = settings.categories.firstIndex(of: category) {
-            settings.categories.remove(at: index)
+        if var current = settings.categories, let index = current.firstIndex(of: category) {
+            current.remove(at: index)
+            settings.categories = current
         }
         modelContext.delete(category)
     }

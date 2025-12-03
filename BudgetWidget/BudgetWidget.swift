@@ -9,16 +9,16 @@ struct BudgetEntry: TimelineEntry {
     let quickIntent: AddExpenseIntent
 }
 
-struct BudgetWidgetProvider: TimelineProvider {
+struct BudgetWidgetProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> BudgetEntry {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (BudgetEntry) -> Void) {
-        completion(placeholder(in: context))
+    func snapshot(for configuration: AddExpenseIntent, in context: Context, completion: @escaping (BudgetEntry) -> Void) {
+        completion(BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: configuration))
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<BudgetEntry>) -> Void) {
+    func timeline(for configuration: AddExpenseIntent, in context: Context, completion: @escaping (Timeline<BudgetEntry>) -> Void) {
         let container = try? WidgetModelContainer.shared
         let modelContext = container.map(ModelContext.init)
 
@@ -41,7 +41,7 @@ struct BudgetWidgetProvider: TimelineProvider {
             date: .now,
             remaining: remaining,
             monthlyBudget: settings.monthlyBudget,
-            quickIntent: AddExpenseIntent()
+            quickIntent: configuration
         )
 
         completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60))))
@@ -74,7 +74,7 @@ struct BudgetWidgetView: View {
                     .font(.caption)
             }
             ProgressView(value: min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1))
-                .tint(entry.remaining >= 0 ? .blue : .red)
+                .tint(entry.remaining >= 0 ? Color.blue : Color.red)
             HStack {
                 Text(entry.remaining >= 0 ? "Remaining" : "Over")
                     .font(.caption)
@@ -82,7 +82,7 @@ struct BudgetWidgetView: View {
                 Spacer()
                 Text(entry.remaining, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(entry.remaining >= 0 ? .primary : .red)
+                    .foregroundStyle(entry.remaining >= 0 ? Color.primary : Color.red)
             }
             Button(intent: entry.quickIntent) {
                 Label("Add expense", systemImage: "plus")

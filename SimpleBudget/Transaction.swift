@@ -56,20 +56,32 @@ extension TransactionType: AppEnum {
 
 @Model
 final class Transaction {
-    var title: String
-    var amount: Double
-    var category: String
-    var date: Date
-    var notes: String
-    var type: TransactionType
+    var title: String = ""
+    var amount: Double = 0
+    var category: String = ""
+    var date: Date = Date()
+    var notes: String = ""
+    var typeRaw: String = TransactionType.expense.rawValue
 
-    init(title: String, amount: Double, category: String, date: Date, notes: String = "", type: TransactionType) {
+    var type: TransactionType {
+        get { TransactionType(rawValue: typeRaw) ?? .expense }
+        set { typeRaw = newValue.rawValue }
+    }
+
+    init(
+        title: String = "",
+        amount: Double = 0,
+        category: String = "",
+        date: Date = Date(),
+        notes: String = "",
+        type: TransactionType = TransactionType.expense
+    ) {
         self.title = title
         self.amount = amount
         self.category = category
         self.date = date
         self.notes = notes
-        self.type = type
+        self.typeRaw = type.rawValue
     }
 
     var monthIdentifier: String {

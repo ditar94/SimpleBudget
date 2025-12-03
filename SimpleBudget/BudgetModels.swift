@@ -3,10 +3,11 @@ import SwiftData
 
 @Model
 final class BudgetCategory: Identifiable, Hashable {
-    @Attribute(.unique) var id: UUID
-    @Attribute(.unique) var name: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var settings: BudgetSettings?
 
-    init(id: UUID = UUID(), name: String) {
+    init(id: UUID = UUID(), name: String = "") {
         self.id = id
         self.name = name
     }
@@ -22,12 +23,17 @@ final class BudgetCategory: Identifiable, Hashable {
 
 @Model
 final class BudgetSettings {
-    var monthlyBudget: Double
-    var quickAddAmount: Double
+    var monthlyBudget: Double = 2000
+    var quickAddAmount: Double = 20
     var lastSyncedAt: Date
-    @Relationship(deleteRule: .cascade) var categories: [BudgetCategory]
+    @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.settings) var categories: [BudgetCategory]? = []
 
-    init(monthlyBudget: Double = 2000, quickAddAmount: Double = 20, lastSyncedAt: Date = .now, categories: [BudgetCategory] = []) {
+    init(
+        monthlyBudget: Double = 2000,
+        quickAddAmount: Double = 20,
+        lastSyncedAt: Date = Date(),
+        categories: [BudgetCategory]? = []
+    ) {
         self.monthlyBudget = monthlyBudget
         self.quickAddAmount = quickAddAmount
         self.lastSyncedAt = lastSyncedAt
@@ -46,13 +52,17 @@ extension BudgetSettings {
     ]
 
     static func bootstrap(in context: ModelContext) -> BudgetSettings {
-        if let existing = try? context.fetch(FetchDescriptor<BudgetSettings>()).first {
+        if let list = try? context.fetch(FetchDescriptor<BudgetSettings>()),
+           let existing = list.first {
             return existing
         }
 
         let categories = defaultCategories.map { BudgetCategory(name: $0) }
         let settings = BudgetSettings(categories: categories)
-        categories.forEach { context.insert($0) }
+        categories.forEach {
+            $0.settings = settings
+            context.insert($0)
+        }
         context.insert(settings)
         return settings
     }
