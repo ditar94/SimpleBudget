@@ -49,7 +49,6 @@ struct ContentView: View {
 
             MonthlyExpensesTab(
                 transactions: transactions,
-                monthlyBudget: settings.monthlyBudget,
                 selectedMonth: $selectedMonth,
                 onDelete: { offsets, list in
                     deleteTransactions(at: offsets, in: list)
@@ -412,7 +411,6 @@ private struct TransactionDraft {
 
 private struct MonthlyExpensesTab: View {
     let transactions: [Transaction]
-    let monthlyBudget: Double
     @Binding var selectedMonth: Date
     var onDelete: (IndexSet, [Transaction]) -> Void
 
@@ -420,29 +418,11 @@ private struct MonthlyExpensesTab: View {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: selectedMonth, toGranularity: .month) }
     }
 
-    private var monthTotal: Double {
-        monthTransactions.reduce(0) { $0 + ($1.type == .expense ? $1.amount : -$1.amount) }
-    }
-
-    private var groupedByMonth: [(String, Double)] {
-        let grouped = Dictionary(grouping: transactions) { $0.monthIdentifier }
-        return grouped.map { key, value in
-            let total = value.reduce(0) { $0 + ($1.type == .expense ? $1.amount : -$1.amount) }
-            return (key, total)
-        }
-        .sorted { $0.0 > $1.0 }
-    }
-
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     MonthSelector(selectedMonth: $selectedMonth)
-                    BudgetProgressCard(
-                        monthlyBudget: monthlyBudget,
-                        spent: monthTotal,
-                        previewAmount: 0
-                    )
                 }
 
                 Section("This month") {
@@ -461,32 +441,9 @@ private struct MonthlyExpensesTab: View {
                         }
                     }
                 }
-
-                if !groupedByMonth.isEmpty {
-                    Section("Look back") {
-                        ForEach(groupedByMonth.prefix(6), id: \.0) { key, total in
-                            HStack {
-                                Text(monthLabel(for: key))
-                                Spacer()
-                                Text(total, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                                    .foregroundStyle(total <= monthlyBudget ? .green : .red)
-                            }
-                        }
-                    }
-                }
             }
             .navigationTitle("Monthly Expenses")
         }
-    }
-
-    private func monthLabel(for identifier: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM"
-        if let date = formatter.date(from: identifier) {
-            formatter.dateFormat = "LLLL yyyy"
-            return formatter.string(from: date)
-        }
-        return identifier
     }
 }
 
