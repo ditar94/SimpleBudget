@@ -10,14 +10,26 @@ import SwiftData
 
 @main
 struct SimpleBudgetApp: App {
+    private static let groupIdentifier = "group.com.example.SimpleBudget"
+    private static let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Transaction.self,
+            BudgetSettings.self,
+            BudgetCategory.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let configuration = ModelConfiguration(
+            "shared-config",
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            allowsSave: true,
+            groupContainer: .appGroup(groupIdentifier),
+            cloudKitDatabase: .private(cloudKitIdentifier)
+        )
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
