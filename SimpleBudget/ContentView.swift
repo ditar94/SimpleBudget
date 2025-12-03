@@ -98,8 +98,7 @@ struct ContentView: View {
             amount: draft.amount,
             category: draft.category,
             date: draft.date,
-            notes: draft.note,
-            type: draft.type
+            notes: draft.note
         )
 
         modelContext.insert(transaction)
@@ -160,7 +159,7 @@ private struct AddExpenseTab: View {
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
-            .reduce(0) { $0 + ($1.type == .expense ? $1.amount : -$1.amount) }
+            .reduce(0) { $0 + $1.amount }
     }
 
     var body: some View {
@@ -170,7 +169,7 @@ private struct AddExpenseTab: View {
                     BudgetProgressCard(
                         monthlyBudget: settings.monthlyBudget,
                         spent: currentMonthTotal,
-                        previewAmount: draft.amount * (draft.type == .expense ? 1 : -1)
+                        previewAmount: draft.amount
                     )
 
                     QuickAddCard(
@@ -179,7 +178,7 @@ private struct AddExpenseTab: View {
                         quickAmount: settings.quickAddAmount,
                         onAdd: {
                             onAdd(draft)
-                            draft = TransactionDraft(category: categories.first ?? "General", type: .expense)
+                            draft = TransactionDraft(category: categories.first ?? "General")
                         }
                     )
 
@@ -193,11 +192,11 @@ private struct AddExpenseTab: View {
                             }
                         }
                         if transactions.isEmpty {
-                            ContentUnavailableView(
-                                "No transactions yet",
-                                systemImage: "tray",
-                                description: Text("Add your first expense or income to start tracking your budget.")
-                            )
+                        ContentUnavailableView(
+                            "No transactions yet",
+                            systemImage: "tray",
+                            description: Text("Add your first expense to start tracking your budget.")
+                        )
                         } else {
                             ForEach(transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }) { transaction in
                                 TransactionRow(transaction: transaction)
@@ -219,7 +218,7 @@ private struct AddExpenseTab: View {
                         onSave: { draft in
                             onAdd(draft)
                             showingForm = false
-                            self.draft = TransactionDraft(category: categories.first ?? "General", type: .expense)
+                            self.draft = TransactionDraft(category: categories.first ?? "General")
                         },
                         onDismiss: { showingForm = false }
                     )
@@ -285,14 +284,6 @@ private struct QuickAddCard: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Quick Add")
                 .font(.headline)
-            HStack(spacing: 12) {
-                Picker("Type", selection: $draft.type) {
-                    ForEach(TransactionType.allCases, id: \.self) { type in
-                        Text(type.title).tag(type)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
 
             HStack {
                 TextField("Amount", text: $draft.amountText)
@@ -345,11 +336,6 @@ private struct AddExpenseForm: View {
             Section("Details") {
                 TextField("Amount", text: $draft.amountText)
                     .keyboardType(.decimalPad)
-                Picker("Type", selection: $draft.type) {
-                    ForEach(TransactionType.allCases, id: \.self) { kind in
-                        Text(kind.title).tag(kind)
-                    }
-                }
                 TextField("Title", text: $draft.title)
                 Picker("Category", selection: $draft.category) {
                     ForEach(categories, id: \.self) { name in
@@ -402,7 +388,6 @@ private struct TransactionDraft {
     var category: String = BudgetSettings.defaultCategories.first ?? "General"
     var date: Date = .now
     var note: String = ""
-    var type: TransactionType = .expense
 
     var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
     var isValid: Bool { amount > 0 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -421,7 +406,7 @@ private struct MonthlyExpensesTab: View {
     }
 
     private var monthTotal: Double {
-        monthTransactions.reduce(0) { $0 + ($1.type == .expense ? $1.amount : -$1.amount) }
+        monthTransactions.reduce(0) { $0 + $1.amount }
     }
 
     private var groupedByMonth: [(String, Double)] {
@@ -601,11 +586,11 @@ private struct TransactionRow: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(transaction.type == .income ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
+                    .fill(Color.red.opacity(0.15))
                     .frame(width: 42, height: 42)
 
-                Image(systemName: transaction.type.symbolName)
-                    .foregroundStyle(transaction.type == .income ? Color.green : Color.red)
+                Image(systemName: "arrow.up.right.circle")
+                    .foregroundStyle(Color.red)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -624,9 +609,9 @@ private struct TransactionRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(transaction.signedAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                Text(-transaction.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                     .font(.headline)
-                    .foregroundStyle(transaction.type == .income ? .green : .red)
+                    .foregroundStyle(.red)
                 Text(transaction.date, style: .date)
                     .font(.caption)
                     .foregroundStyle(.secondary)
