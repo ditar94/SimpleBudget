@@ -150,12 +150,7 @@ private struct AddExpenseTab: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    BudgetHeaderCard(
-                        remainingBudget: remainingBudget,
-                        currencyCode: Locale.current.currency?.identifier ?? "USD"
-                    )
-
+                VStack(alignment: .leading, spacing: 20) {
                     ExpenseDialCard(
                         remainingBudget: remainingBudget,
                         currencyCode: Locale.current.currency?.identifier ?? "USD",
@@ -198,7 +193,8 @@ private struct AddExpenseTab: View {
                         .disabled(!draft.isValid)
                     }
                 }
-                .padding(24)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 28)
             }
             .navigationTitle("New Expense")
             .onAppear {
@@ -207,33 +203,6 @@ private struct AddExpenseTab: View {
                 }
             }
         }
-    }
-}
-
-private struct BudgetHeaderCard: View {
-    let remainingBudget: Double
-    let currencyCode: String
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Remaining this month")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.8))
-                Text(remainingBudget, format: .currency(code: currencyCode))
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text("Stay on track with mindful spending.")
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.8))
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        )
     }
 }
 
