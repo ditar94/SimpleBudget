@@ -427,10 +427,15 @@ private struct BudgetDial: View {
     }
 
     private func angleDelta(from previous: Double, to current: Double) -> Double {
-        var delta = current - previous
-        if delta > 180 { delta -= 360 }
-        if delta < -180 { delta += 360 }
-        return delta
+        let rawDelta = current - previous
+        // Detect wraparound only when crossing the 0°/360° boundary; otherwise keep the full delta
+        if rawDelta > 180, previous > 270, current < 90 {
+            return rawDelta - 360
+        }
+        if rawDelta < -180, previous < 90, current > 270 {
+            return rawDelta + 360
+        }
+        return rawDelta
     }
 }
 
