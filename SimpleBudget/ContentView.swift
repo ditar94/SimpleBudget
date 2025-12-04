@@ -331,8 +331,8 @@ private struct BudgetDial: View {
                 let fillGradient = AngularGradient(
                     colors: [Color.blue.opacity(0.35), .blue],
                     center: .center,
-                    startAngle: .degrees(-90),
-                    endAngle: .degrees(-90 + primaryTrim * 360)
+                    startAngle: .degrees(0),
+                    endAngle: .degrees(primaryTrim * 360)
                 )
 
                 Circle()
@@ -347,7 +347,7 @@ private struct BudgetDial: View {
 
                     let firstSegmentEnd = min(overdrawEnd, 1)
                     let wraparoundAmount = max(overdrawEnd - 1, 0)
-                    let gradientStartAngle = -90 + (overdrawStart + completedOverdrawWraps) * 360
+                    let gradientStartAngle = (overdrawStart + completedOverdrawWraps) * 360
 
                     if firstSegmentEnd > overdrawStart {
                         Circle()
@@ -441,7 +441,7 @@ private struct BudgetDial: View {
     private func normalizedAngle(for location: CGPoint, in size: CGSize) -> Double {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
-        let angle = atan2(vector.dy, vector.dx) + .pi / 2
+        let angle = atan2(vector.dy, vector.dx)
         var degrees = angle * 180 / .pi
         if degrees < 0 { degrees += 360 }
         return degrees
