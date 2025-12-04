@@ -8,6 +8,15 @@
 import SwiftUI
 import SwiftData
 
+private extension Color {
+    static let primaryBlue = Color(red: 0.25, green: 0.55, blue: 1.0)
+    static let primaryText = Color(red: 0.12, green: 0.14, blue: 0.2)
+    static let secondaryLabel = Color(red: 0.45, green: 0.5, blue: 0.58)
+    static let cardBackground = Color.white
+    static let pageBackground = Color(red: 0.96, green: 0.97, blue: 0.99)
+    static let border = Color(red: 0.88, green: 0.91, blue: 0.96)
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
@@ -149,30 +158,40 @@ private struct AddExpenseTab: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 ExpenseDialCard(
                     remainingBudget: remainingBudget,
                     currencyCode: Locale.current.currency?.identifier ?? "USD",
                     draft: $draft
                 )
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Category")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.secondaryLabel)
+                            .textCase(.uppercase)
 
                         CategoryChips(categories: categories, selection: $draft.category)
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Note")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        TextField("Optional note", text: $draft.note, axis: .vertical)
-                            .padding(8)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.secondaryLabel)
+                            .textCase(.uppercase)
+                        TextField("Note (optional)", text: $draft.note, axis: .vertical)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
                             .lineLimit(1...3)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.cardBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.border, lineWidth: 1)
+                            )
                     }
 
                     Button(action: {
@@ -180,13 +199,13 @@ private struct AddExpenseTab: View {
                         draft = TransactionDraft(category: categories.first ?? "General")
                     }) {
                         Text("Add Expense")
-                            .font(.footnote.weight(.semibold))
+                            .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 12)
                             .foregroundStyle(.white)
                             .background(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .fill(draft.isValid ? Color.blue : Color.gray.opacity(0.5))
+                                    .fill(draft.isValid ? Color.primaryBlue : Color.gray.opacity(0.4))
                             )
                     }
                     .disabled(!draft.isValid)
@@ -194,9 +213,11 @@ private struct AddExpenseTab: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color.pageBackground)
+            .ignoresSafeArea()
             .navigationTitle("New Expense")
             .onAppear {
                 if draft.category.isEmpty {
@@ -226,15 +247,21 @@ private struct ExpenseDialCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Set expense amount")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.system(size: 16, weight: .semibold))
                     Text("Drag around the dial to fine-tune your spend.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.secondaryLabel)
                 }
                 Spacer()
-                Text(Date.now, style: .date)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(Date.now, format: Date.FormatStyle().month(.abbreviated).year())
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.primaryBlue)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.primaryBlue.opacity(0.12))
+                    )
             }
 
             BudgetDial(
@@ -244,8 +271,15 @@ private struct ExpenseDialCard: View {
             )
             .frame(height: 180)
         }
-        .padding(14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.border, lineWidth: 1)
+        )
     }
 }
 
@@ -304,10 +338,10 @@ private struct BudgetDial: View {
 
             ZStack {
                 Circle()
-                    .stroke(Color.blue.opacity(0.1), lineWidth: ringWidth)
+                    .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
 
                 let fillGradient = AngularGradient(
-                    colors: [Color.blue.opacity(0.35), .blue],
+                    colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
                     center: .center,
                     startAngle: .degrees(0),
                     endAngle: .degrees(primaryTrim * 360)
@@ -334,29 +368,33 @@ private struct BudgetDial: View {
                 }
 
                 Circle()
-                    .fill(overBudget ? Color.red : Color.black)
+                    .fill(overBudget ? Color.red : Color.primaryBlue)
                     .frame(width: 16, height: 16)
                     .position(endPoint)
 
                 VStack(spacing: 6) {
-                    Text(amount, format: .currency(code: currencyCode))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                    Text("$ ")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.primaryBlue)
+                        + Text(amount, format: .number.precision(.fractionLength(0)))
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.primaryText)
                     Text(
                         overBudget
                             ? "Over by \(overageAmount, format: .currency(code: currencyCode))"
                             : "Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))"
                     )
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.secondaryLabel)
                     Button {
                         amount = 0
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "xmark")
                             Text("Clear")
-                                .font(.footnote.weight(.semibold))
+                                .font(.system(size: 13, weight: .semibold))
                         }
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryLabel)
                     }
                     .buttonStyle(.plain)
                 }
@@ -423,26 +461,26 @@ private struct CategoryChips: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 ForEach(categories, id: \.self) { name in
                     let isSelected = name == selection
                     Button {
                         selection = name
                     } label: {
                         Text(name)
-                            .font(.caption.weight(.semibold))
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 8)
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.vertical, 7)
+                            .padding(.horizontal, 12)
                             .frame(minWidth: 46)
                             .background(
                                 Capsule()
-                                    .fill(isSelected ? Color.blue.opacity(0.15) : Color(.systemGray6))
+                                    .fill(isSelected ? Color.primaryBlue : Color.cardBackground)
                             )
                             .overlay(
                                 Capsule()
-                                    .stroke(isSelected ? Color.blue : Color.gray.opacity(0.2), lineWidth: 1)
+                                    .stroke(isSelected ? Color.primaryBlue : Color.border, lineWidth: 1)
                             )
-                            .foregroundStyle(isSelected ? Color.blue : .primary)
+                            .foregroundStyle(isSelected ? Color.white : Color.secondaryLabel)
                     }
                 }
             }
