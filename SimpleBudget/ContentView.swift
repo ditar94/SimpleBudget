@@ -157,45 +157,47 @@ private struct AddExpenseTab: View {
                         draft: $draft
                     )
 
-                    VStack(alignment: .leading, spacing: 18) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Category")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Category")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
 
-                            CategoryChips(categories: categories, selection: $draft.category)
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Note")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            TextField("Optional note", text: $draft.note, axis: .vertical)
-                                .padding()
-                                .lineLimit(1...3)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemGray6)))
-                        }
-
-                        Button(action: {
-                            onAdd(draft)
-                            draft = TransactionDraft(category: categories.first ?? "General")
-                        }) {
-                            Text("Add Expense")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .foregroundStyle(.white)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(draft.isValid ? Color.blue : Color.gray.opacity(0.5))
-                                )
-                        }
-                        .disabled(!draft.isValid)
+                        CategoryChips(categories: categories, selection: $draft.category)
                     }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Note")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        TextField("Optional note", text: $draft.note, axis: .vertical)
+                            .padding(10)
+                            .lineLimit(1...3)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
+                    }
+
+                    Button(action: {
+                        onAdd(draft)
+                        draft = TransactionDraft(category: categories.first ?? "General")
+                    }) {
+                        Text("Add Expense")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .foregroundStyle(.white)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(draft.isValid ? Color.blue : Color.gray.opacity(0.5))
+                            )
+                    }
+                    .disabled(!draft.isValid)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 28)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .navigationTitle("New Expense")
             .onAppear {
                 if draft.category.isEmpty {
@@ -221,7 +223,7 @@ private struct ExpenseDialCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Set expense amount")
@@ -242,9 +244,9 @@ private struct ExpenseDialCard: View {
                 displayMaximum: remainingBudget,
                 currencyCode: currencyCode
             )
-            .frame(height: 280)
+            .frame(height: 220)
         }
-        .padding(20)
+        .padding(16)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
@@ -435,17 +437,17 @@ private struct CategoryChips: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 ForEach(categories, id: \.self) { name in
                     let isSelected = name == selection
                     Button {
                         selection = name
                     } label: {
                         Text(name)
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 14)
-                            .frame(minWidth: 64)
+                            .font(.footnote.weight(.semibold))
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(minWidth: 52)
                             .background(
                                 Capsule()
                                     .fill(isSelected ? Color.blue.opacity(0.15) : Color(.systemGray6))
