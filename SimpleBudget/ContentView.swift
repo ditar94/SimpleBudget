@@ -281,6 +281,13 @@ private struct ExpenseDialCard: View {
     }
 }
 
+func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Double {
+    let rawDelta = current - previous
+    let wrapped = ((rawDelta + 180).truncatingRemainder(dividingBy: 360) + 360)
+        .truncatingRemainder(dividingBy: 360)
+    return wrapped - 180
+}
+
 private struct BudgetDial: View {
     @Binding var amount: Double
     let remainingBudget: Double
@@ -427,15 +434,7 @@ private struct BudgetDial: View {
     }
 
     private func angleDelta(from previous: Double, to current: Double) -> Double {
-        let rawDelta = current - previous
-        // Detect wraparound only when crossing the 0°/360° boundary; otherwise keep the full delta
-        if rawDelta > 180, previous > 270, current < 90 {
-            return rawDelta - 360
-        }
-        if rawDelta < -180, previous < 90, current > 270 {
-            return rawDelta + 360
-        }
-        return rawDelta
+        smallestSignedAngleDelta(from: previous, to: current)
     }
 }
 
