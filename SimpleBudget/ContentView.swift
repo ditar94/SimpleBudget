@@ -303,7 +303,11 @@ private struct BudgetDial: View {
         let remainder = overflowProgress.truncatingRemainder(dividingBy: 1)
         return remainder == 0 ? 1 : remainder
     }
-    private var knobRotationProgress: Double { overBudget ? overflowTrim : primaryTrim }
+    private var knobRotationProgress: Double {
+        guard normalizedProgress >= 1 else { return primaryTrim }
+        let wrapped = normalizedProgress.truncatingRemainder(dividingBy: 1)
+        return wrapped == 0 ? 1 : wrapped
+    }
     private var overBudget: Bool { remainingBudget > 0 ? amount > remainingBudget : amount > 0 }
     private var remainingAfterSelection: Double { max(remainingBudget - amount, 0) }
     private var overageAmount: Double {
@@ -317,7 +321,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let knobRadius = size / 2
-            let endAngle = Angle(degrees: knobRotationProgress * 360)
+            let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * knobRadius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * knobRadius
@@ -337,7 +341,7 @@ private struct BudgetDial: View {
                 Circle()
                     .trim(from: 0, to: primaryTrim)
                     .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
-                    .rotationEffect(.degrees(0))
+                    .rotationEffect(.degrees(-90))
 
                 if overBudget {
                     Circle()
@@ -351,6 +355,7 @@ private struct BudgetDial: View {
                             ),
                             style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
                         )
+                        .rotationEffect(.degrees(-90))
                 }
 
                 Circle()
@@ -418,14 +423,19 @@ private struct BudgetDial: View {
         let angle = atan2(vector.dy, vector.dx)
         var degrees = angle * 180 / .pi
         if degrees < 0 { degrees += 360 }
-        return degrees
+        return (degrees + 90).truncatingRemainder(dividingBy: 360)
     }
 
     private func angleDelta(from previous: Double, to current: Double) -> Double {
-        var delta = current - previous
-        if delta > 180 { delta -= 360 }
-        if delta < -180 { delta += 360 }
-        return delta
+        let rawDelta = current - previous
+        // Detect wraparound only when crossing the 0°/360° boundary; otherwise keep the full delta
+        if rawDelta > 180, previous > 270, current < 90 {
+            return rawDelta - 360
+        }
+        if rawDelta < -180, previous < 90, current > 270 {
+            return rawDelta + 360
+        }
+        return rawDelta
     }
 }
 
