@@ -149,16 +149,20 @@ private struct AddExpenseTab: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    ExpenseDialCard(
-                        remainingBudget: remainingBudget,
-                        currencyCode: Locale.current.currency?.identifier ?? "USD",
-                        draft: $draft
-                    )
+            VStack(alignment: .leading, spacing: 12) {
+                BudgetHeaderCard(
+                    remainingBudget: remainingBudget,
+                    currencyCode: Locale.current.currency?.identifier ?? "USD"
+                )
 
-                VStack(alignment: .leading, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 10) {
+                ExpenseDialCard(
+                    remainingBudget: remainingBudget,
+                    currencyCode: Locale.current.currency?.identifier ?? "USD",
+                    draft: $draft
+                )
+
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Category")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
@@ -166,14 +170,14 @@ private struct AddExpenseTab: View {
                         CategoryChips(categories: categories, selection: $draft.category)
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Note")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                         TextField("Optional note", text: $draft.note, axis: .vertical)
-                            .padding(10)
+                            .padding(8)
                             .lineLimit(1...3)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
                     }
 
                     Button(action: {
@@ -181,9 +185,9 @@ private struct AddExpenseTab: View {
                         draft = TransactionDraft(category: categories.first ?? "General")
                     }) {
                         Text("Add Expense")
-                            .font(.subheadline.weight(.semibold))
+                            .font(.footnote.weight(.semibold))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, 10)
                             .foregroundStyle(.white)
                             .background(
                                 RoundedRectangle(cornerRadius: 14)
@@ -192,11 +196,11 @@ private struct AddExpenseTab: View {
                     }
                     .disabled(!draft.isValid)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 28)
+
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .navigationTitle("New Expense")
             .onAppear {
@@ -205,6 +209,33 @@ private struct AddExpenseTab: View {
                 }
             }
         }
+    }
+}
+
+private struct BudgetHeaderCard: View {
+    let remainingBudget: Double
+    let currencyCode: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Remaining this month")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                Text(remainingBudget, format: .currency(code: currencyCode))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Text("Stay on track with mindful spending.")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        )
     }
 }
 
@@ -223,18 +254,18 @@ private struct ExpenseDialCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Set expense amount")
-                        .font(.headline)
+                        .font(.subheadline.weight(.semibold))
                     Text("Drag around the dial to fine-tune your spend.")
-                        .font(.subheadline)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(Date.now, style: .date)
-                    .font(.footnote)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -243,10 +274,10 @@ private struct ExpenseDialCard: View {
                 remainingBudget: remainingBudget,
                 currencyCode: currencyCode
             )
-            .frame(height: 220)
+            .frame(height: 180)
         }
-        .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -405,10 +436,10 @@ private struct CategoryChips: View {
                         selection = name
                     } label: {
                         Text(name)
-                            .font(.footnote.weight(.semibold))
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .frame(minWidth: 52)
+                            .font(.caption.weight(.semibold))
+                            .padding(.vertical, 5)
+                            .padding(.horizontal, 8)
+                            .frame(minWidth: 46)
                             .background(
                                 Capsule()
                                     .fill(isSelected ? Color.blue.opacity(0.15) : Color(.systemGray6))
