@@ -291,9 +291,11 @@ private struct BudgetDial: View {
     @State private var progressDelta: Double = 0
     @State private var previousAngle: Double?
 
-    private var dialRange: Double { max(remainingBudget, 0.01) }
-    private var progress: Double { dialRange > 0 ? amount / dialRange : 0 }
-    private var normalizedProgress: Double { max(progress, 0) }
+    private var dialRange: Double { max(remainingBudget, 0) }
+    private var normalizedProgress: Double {
+        guard dialRange > 0 else { return 0 }
+        return max(amount / dialRange, 0)
+    }
     private var primaryTrim: Double { min(normalizedProgress, 1) }
     private var wrappedProgress: Double {
         guard normalizedProgress > 0 else { return 0 }
@@ -387,21 +389,23 @@ private struct BudgetDial: View {
 
         if previousAngle == nil {
             previousAngle = angle
-            initialProgress = amount / dialRange
+            initialProgress = dialRange > 0 ? amount / dialRange : 0
         }
 
-        if let previousAngle {
+        if let previousAngle, dialRange > 0 {
             progressDelta += angleDelta(from: previousAngle, to: angle) / 360
         }
 
         previousAngle = angle
+
+        guard dialRange > 0 else { return }
 
         let newProgress = max(0, initialProgress + progressDelta)
         amount = max(0, newProgress * dialRange)
     }
 
     private func resetDragState() {
-        initialProgress = amount / dialRange
+        initialProgress = dialRange > 0 ? amount / dialRange : 0
         progressDelta = 0
         previousAngle = nil
     }
