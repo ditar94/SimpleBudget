@@ -380,6 +380,17 @@ private struct BudgetDial: View {
                     )
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
+                    Button {
+                        amount = 0
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "xmark")
+                            Text("Clear")
+                                .font(.footnote.weight(.semibold))
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .contentShape(Rectangle())
