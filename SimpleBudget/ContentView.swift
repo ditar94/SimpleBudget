@@ -297,11 +297,13 @@ private struct BudgetDial: View {
         return max(amount / dialRange, 0)
     }
     private var primaryTrim: Double { min(normalizedProgress, 1) }
-    private var wrappedProgress: Double {
-        guard normalizedProgress > 0 else { return 0 }
-        let remainder = normalizedProgress.truncatingRemainder(dividingBy: 1)
+    private var overflowProgress: Double { max(normalizedProgress - 1, 0) }
+    private var overflowTrim: Double {
+        guard overflowProgress > 0 else { return 0 }
+        let remainder = overflowProgress.truncatingRemainder(dividingBy: 1)
         return remainder == 0 ? 1 : remainder
     }
+    private var knobRotationProgress: Double { overBudget ? overflowTrim : primaryTrim }
     private var overBudget: Bool { remainingBudget > 0 ? amount > remainingBudget : amount > 0 }
     private var remainingAfterSelection: Double { max(remainingBudget - amount, 0) }
     private var overageAmount: Double {
@@ -315,7 +317,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let knobRadius = size / 2
-            let endAngle = Angle(degrees: wrappedProgress * 360)
+            let endAngle = Angle(degrees: knobRotationProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * knobRadius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * knobRadius
@@ -339,13 +341,13 @@ private struct BudgetDial: View {
 
                 if overBudget {
                     Circle()
-                        .trim(from: 0, to: wrappedProgress)
+                        .trim(from: 0, to: overflowTrim)
                         .stroke(
                             AngularGradient(
                                 colors: [Color.red.opacity(0.65), .red],
                                 center: .center,
                                 startAngle: .degrees(0),
-                                endAngle: .degrees(wrappedProgress * 360)
+                                endAngle: .degrees(overflowTrim * 360)
                             ),
                             style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
                         )
