@@ -571,37 +571,31 @@ private struct MonthlyExpensesTab: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                MonthSummaryCard(
-                    month: selectedMonth,
-                    spent: monthTotal,
-                    limit: monthlyBudget,
-                    remaining: remaining
-                )
+            ScrollView {
+                VStack(spacing: 18) {
+                    MonthSelector(selectedMonth: $selectedMonth)
+                        .padding(.top, 4)
 
-                List {
-                    Section(header: MonthSelector(selectedMonth: $selectedMonth)) {
-                        if monthTransactions.isEmpty {
-                            ContentUnavailableView(
-                                "No expenses",
-                                systemImage: "tray",
-                                description: Text("Add transactions to see them here.")
-                            )
-                            .frame(maxWidth: .infinity)
-                        } else {
-                            ForEach(Array(monthTransactions.enumerated()), id: \.element.id) { index, transaction in
-                                TransactionCard(transaction: transaction)
-                            }
-                            .onDelete { indexSet in
-                                onDelete(indexSet, monthTransactions)
-                            }
+                    MonthSummaryCard(
+                        month: selectedMonth,
+                        spent: monthTotal,
+                        limit: monthlyBudget,
+                        remaining: remaining
+                    )
+
+                    TransactionsSection(
+                        transactions: monthTransactions,
+                        onDelete: { indexSet in
+                            onDelete(indexSet, monthTransactions)
                         }
-                    }
+                    )
                 }
-                .listStyle(.insetGrouped)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
-            .padding()
-            .navigationTitle("Monthly Expenses")
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Monthly Overview")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
@@ -618,62 +612,75 @@ private struct MonthSummaryCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(month, format: .dateTime.month(.wide).year())
-                        .font(.headline)
-                    Text("Spending overview")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                    Text("Total spent")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.75))
+                    Text(spent, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
                 }
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Spent")
+                VStack(alignment: .trailing, spacing: 8) {
+                    Text("Monthly limit")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(spent, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                    Text(limit, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+
+                    Capsule()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(width: 72, height: 1)
+
+                    Text(remaining >= 0 ? "Remaining" : "Over")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                    Text(abs(remaining), format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(remaining >= 0 ? .white : .red.opacity(0.9))
                 }
             }
 
-            ProgressView(value: progress)
-                .tint(remaining >= 0 ? .blue : .red)
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: progress)
+                    .tint(.white)
+                    .shadow(color: .white.opacity(0.2), radius: 2, x: 0, y: 2)
 
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(remaining >= 0 ? "Remaining" : "Over limit")
+                HStack {
+                    Label(
+                        remaining >= 0 ? "On track" : "Over budget",
+                        systemImage: remaining >= 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(remaining >= 0 ? .white.opacity(0.9) : .yellow.opacity(0.95))
+
+                    Spacer()
+
+                    Text("\(Int(progress * 100))% of limit")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(abs(remaining), format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                        .font(.headline)
-                        .foregroundStyle(remaining >= 0 ? .blue : .red)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Limit")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(limit, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
             }
         }
-        .padding()
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
-                colors: [Color.blue.opacity(0.15), Color.purple.opacity(0.1)],
+                colors: [Color(red: 0.38, green: 0.32, blue: 0.88), Color(red: 0.65, green: 0.51, blue: 0.98)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(.thinMaterial.opacity(0.25))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -681,26 +688,94 @@ private struct MonthSelector: View {
     @Binding var selectedMonth: Date
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Button {
-                withAnimation {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: selectedMonth) ?? selectedMonth
                 }
             } label: {
                 Image(systemName: "chevron.left")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
             }
-            Spacer()
-            Text(selectedMonth, format: .dateTime.month(.wide).year())
-                .font(.headline)
-            Spacer()
+
+            VStack(spacing: 4) {
+                Text("Monthly Overview")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(selectedMonth, format: .dateTime.month(.wide).year())
+                    .font(.title3.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+
             Button {
-                withAnimation {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth) ?? selectedMonth
                 }
             } label: {
                 Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
             }
         }
+        .padding(.vertical, 2)
+    }
+}
+
+private struct TransactionsSection: View {
+    let transactions: [Transaction]
+    var onDelete: (IndexSet) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Transactions")
+                        .font(.headline)
+                    Text("Your spending details for this month")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text("\(transactions.count) items")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            if transactions.isEmpty {
+                ContentUnavailableView(
+                    "No expenses",
+                    systemImage: "tray",
+                    description: Text("Add transactions to see them here.")
+                )
+                .frame(maxWidth: .infinity)
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(Array(transactions.enumerated()), id: \.element.id) { index, transaction in
+                        TransactionCard(transaction: transaction)
+                            .swipeActions {
+                                Button(role: .destructive) {
+                                    onDelete(IndexSet(integer: index))
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 
@@ -709,10 +784,23 @@ private struct TransactionCard: View {
 
     private var avatarGradient: LinearGradient {
         LinearGradient(
-            colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+            colors: [Color(red: 0.53, green: 0.45, blue: 0.95), Color(red: 0.36, green: 0.62, blue: 0.98)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+
+    private var iconName: String {
+        switch transaction.category.lowercased() {
+        case let name where name.contains("food") || name.contains("dining"):
+            return "fork.knife"
+        case let name where name.contains("travel") || name.contains("transport"):
+            return "airplane"
+        case let name where name.contains("shopping") || name.contains("store"):
+            return "bag.fill"
+        default:
+            return "creditcard.fill"
+        }
     }
 
     var body: some View {
@@ -722,7 +810,7 @@ private struct TransactionCard: View {
                     .fill(avatarGradient)
                     .frame(width: 52, height: 52)
 
-                Image(systemName: "creditcard.fill")
+                Image(systemName: iconName)
                     .foregroundStyle(.white)
                     .font(.title3)
             }
@@ -748,15 +836,15 @@ private struct TransactionCard: View {
 
             Text(-transaction.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(.red)
+                .foregroundStyle(Color(red: 0.91, green: 0.24, blue: 0.36))
         }
-        .padding()
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.systemBackground))
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 6)
     }
 }
 
