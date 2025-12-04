@@ -584,18 +584,16 @@ private struct MonthlyExpensesTab: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    MonthSummaryCard(
-                        month: selectedMonth,
-                        spent: monthTotal,
-                        limit: monthlyBudget,
-                        remaining: remaining
-                    )
+            VStack(spacing: 16) {
+                MonthSummaryCard(
+                    month: selectedMonth,
+                    spent: monthTotal,
+                    limit: monthlyBudget,
+                    remaining: remaining
+                )
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        MonthSelector(selectedMonth: $selectedMonth)
-
+                List {
+                    Section(header: MonthSelector(selectedMonth: $selectedMonth)) {
                         if monthTransactions.isEmpty {
                             ContentUnavailableView(
                                 "No expenses",
@@ -604,28 +602,18 @@ private struct MonthlyExpensesTab: View {
                             )
                             .frame(maxWidth: .infinity)
                         } else {
-                            LazyVStack(spacing: 12) {
-                                ForEach(Array(monthTransactions.enumerated()), id: \.element.id) { index, transaction in
-                                    TransactionCard(transaction: transaction)
-                                        .swipeActions {
-                                            Button(role: .destructive) {
-                                                onDelete(IndexSet(integer: index), monthTransactions)
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
-                                }
+                            ForEach(Array(monthTransactions.enumerated()), id: \.element.id) { index, transaction in
+                                TransactionCard(transaction: transaction)
+                            }
+                            .onDelete { indexSet in
+                                onDelete(indexSet, monthTransactions)
                             }
                         }
                     }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.secondarySystemBackground))
-                    )
                 }
-                .padding()
+                .listStyle(.insetGrouped)
             }
+            .padding()
             .navigationTitle("Monthly Expenses")
         }
     }
