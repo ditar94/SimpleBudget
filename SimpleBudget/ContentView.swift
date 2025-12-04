@@ -269,8 +269,7 @@ private struct ExpenseDialCard: View {
 
             BudgetDial(
                 amount: amountBinding,
-                maximum: max(remainingBudget, 0.01),
-                displayMaximum: remainingBudget,
+                remainingBudget: remainingBudget,
                 currencyCode: currencyCode
             )
             .frame(height: 280)
@@ -282,8 +281,7 @@ private struct ExpenseDialCard: View {
 
 private struct BudgetDial: View {
     @Binding var amount: Double
-    let maximum: Double
-    let displayMaximum: Double
+    let remainingBudget: Double
     let currencyCode: String
 
     @GestureState private var isDragging = false
@@ -291,30 +289,20 @@ private struct BudgetDial: View {
     @State private var progressDelta: Double = 0
     @State private var previousAngle: Double?
 
-    private var denominator: Double { displayMaximum > 0 ? displayMaximum : maximum }
-    private var progress: Double { denominator > 0 ? amount / denominator : 0 }
-    private var primaryTrim: Double { min(max(progress, 0), 1) }
-    private var overdrawTrim: Double { max(progress - 1, 0) }
-    private var overdrawRemainder: Double {
-        let remainder = overdrawTrim.truncatingRemainder(dividingBy: 1)
-        if remainder == 0 && overdrawTrim > 0 { return 1 }
-        return remainder
+    private var dialRange: Double { max(remainingBudget, 0.01) }
+    private var progress: Double { dialRange > 0 ? amount / dialRange : 0 }
+    private var normalizedProgress: Double { max(progress, 0) }
+    private var primaryTrim: Double { min(normalizedProgress, 1) }
+    private var wrappedProgress: Double {
+        guard normalizedProgress > 0 else { return 0 }
+        let remainder = normalizedProgress.truncatingRemainder(dividingBy: 1)
+        return remainder == 0 ? 1 : remainder
     }
-    private var visibleOverdraw: Double { max(overdrawRemainder, 0) }
-    private var completedOverdrawWraps: Double { floor(overdrawTrim) }
-    private var knobDisplayProgress: Double {
-        let normalized = max(progress, 0)
-        let wrapped = normalized.truncatingRemainder(dividingBy: 1)
-
-        if normalized == 0 { return 0 }
-        if normalized <= 1 { return normalized }
-        return wrapped == 0 ? 1 : wrapped
-    }
-    private var overBudget: Bool { displayMaximum > 0 ? amount > displayMaximum : amount > 0 }
-    private var remainingAfterSelection: Double { max(displayMaximum - amount, 0) }
+    private var overBudget: Bool { remainingBudget > 0 ? amount > remainingBudget : amount > 0 }
+    private var remainingAfterSelection: Double { max(remainingBudget - amount, 0) }
     private var overageAmount: Double {
-        guard displayMaximum > 0 else { return max(amount, 0) }
-        return max(amount - displayMaximum, 0)
+        guard remainingBudget > 0 else { return max(amount, 0) }
+        return max(amount - remainingBudget, 0)
     }
 
     var body: some View {
@@ -323,7 +311,7 @@ private struct BudgetDial: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
             let knobRadius = size / 2
-            let endAngle = Angle(degrees: knobDisplayProgress * 360)
+            let endAngle = Angle(degrees: wrappedProgress * 360)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * knobRadius,
                 y: center.y + sin(CGFloat(endAngle.radians)) * knobRadius
@@ -346,44 +334,17 @@ private struct BudgetDial: View {
                     .rotationEffect(.degrees(0))
 
                 if overBudget {
-                    let overdraw = visibleOverdraw
-                    let overdrawStart = primaryTrim
-                    let overdrawEnd = overdrawStart + overdraw
-
-                    let firstSegmentEnd = min(overdrawEnd, 1)
-                    let wraparoundAmount = max(overdrawEnd - 1, 0)
-                    let gradientStartAngle = (overdrawStart + completedOverdrawWraps) * 360
-
-                    if firstSegmentEnd > overdrawStart {
-                        Circle()
-                            .trim(from: overdrawStart, to: firstSegmentEnd)
-                            .stroke(
-                                AngularGradient(
-                                    colors: [Color.red.opacity(0.65), .red],
-                                    center: .center,
-                                    startAngle: .degrees(gradientStartAngle),
-                                    endAngle: .degrees(gradientStartAngle + (firstSegmentEnd - overdrawStart) * 360)
-                                ),
-                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .butt)
-                            )
-                    }
-
-                    if wraparoundAmount > 0 {
-                        Circle()
-                            .trim(from: 0, to: min(wraparoundAmount, 1))
-                            .stroke(
-                                AngularGradient(
-                                    colors: [Color.red.opacity(0.65), .red],
-                                    center: .center,
-                                    startAngle: .degrees(gradientStartAngle + (firstSegmentEnd - overdrawStart) * 360),
-                                    endAngle: .degrees(gradientStartAngle + (firstSegmentEnd - overdrawStart + min(wraparoundAmount, 1)) * 360)
-                                ),
-                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .butt)
-                            )
-                    }
-
                     Circle()
-                        .stroke(Color.red.opacity(0.18), lineWidth: ringWidth)
+                        .trim(from: 0, to: wrappedProgress)
+                        .stroke(
+                            AngularGradient(
+                                colors: [Color.red.opacity(0.65), .red],
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(wrappedProgress * 360)
+                            ),
+                            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+                        )
                 }
 
                 Circle()
@@ -424,7 +385,7 @@ private struct BudgetDial: View {
 
         if previousAngle == nil {
             previousAngle = angle
-            initialProgress = amount / maximum
+            initialProgress = amount / dialRange
         }
 
         if let previousAngle {
@@ -434,11 +395,11 @@ private struct BudgetDial: View {
         previousAngle = angle
 
         let newProgress = max(0, initialProgress + progressDelta)
-        amount = max(0, newProgress * maximum)
+        amount = max(0, newProgress * dialRange)
     }
 
     private func resetDragState() {
-        initialProgress = amount / maximum
+        initialProgress = amount / dialRange
         progressDelta = 0
         previousAngle = nil
     }
