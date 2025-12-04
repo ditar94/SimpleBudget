@@ -42,4 +42,21 @@ struct SimpleBudgetTests {
         #expect(totalDelta == 60)
     }
 
+    @Test func parsesThousandsSeparatedAmounts() async throws {
+        var draft = TransactionDraft()
+        draft.amountText = "1,200.50"
+
+        #expect(draft.amount == 1200.5)
+    }
+
+    @Test func roundTripFormattingPreservesLargeAmount() async throws {
+        var draft = TransactionDraft()
+        draft.setAmount(1_523.75)
+
+        var parsedDraft = TransactionDraft()
+        parsedDraft.amountText = draft.amountText
+
+        #expect(parsedDraft.amount == 1_523.75)
+    }
+
 }

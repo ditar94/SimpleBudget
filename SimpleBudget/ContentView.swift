@@ -521,22 +521,31 @@ private struct AddExpenseForm: View {
     }
 }
 
-private struct TransactionDraft {
+struct TransactionDraft {
     var amountText: String = ""
     var category: String = BudgetSettings.defaultCategories.first ?? "General"
     var date: Date = .now
     var note: String = ""
 
-    var amount: Double { Double(amountText.replacingOccurrences(of: ",", with: ".")) ?? 0 }
+    var amount: Double {
+        let formatter = TransactionDraft.makeNumberFormatter()
+        let trimmed = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return formatter.number(from: trimmed)?.doubleValue ?? 0
+    }
     var isValid: Bool { amount > 0 && !category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     mutating func setAmount(_ value: Double) {
+        let formatter = TransactionDraft.makeNumberFormatter()
+        amountText = formatter.string(from: NSNumber(value: max(0, value))) ?? ""
+    }
+
+    private static func makeNumberFormatter() -> NumberFormatter {
         let formatter = NumberFormatter()
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 0
         formatter.locale = Locale.current
         formatter.numberStyle = .decimal
-        amountText = formatter.string(from: NSNumber(value: max(0, value))) ?? ""
+        return formatter
     }
 }
 
