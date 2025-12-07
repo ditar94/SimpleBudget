@@ -900,15 +900,19 @@ private struct TransactionsSection: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 12, trailing: 20))
                 .listRowBackground(Color(.systemGroupedBackground))
             } else {
-                ForEach(transactions) { transaction in
+                ForEach(Array(transactions.enumerated()), id: \.element.id) { index, transaction in
                     TransactionCard(transaction: transaction)
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color(.systemGroupedBackground))
-                }
-                .onDelete { offsets in
-                    pendingDeletion = offsets
-                    showingDeleteConfirmation = true
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                pendingDeletion = IndexSet(integer: index)
+                                showingDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                 }
             }
         } header: {
