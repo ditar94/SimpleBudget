@@ -396,8 +396,8 @@ private struct BudgetDial: View {
                     }
 
                     Circle()
-                        .fill(overBudget ? Color.red : Color.primaryBlue)
-                        .frame(width: 16, height: 16)
+                        .fill(Color.black)
+                        .frame(width: 17, height: 17)
                         .position(endPoint)
 
                     VStack(spacing: 6) {
