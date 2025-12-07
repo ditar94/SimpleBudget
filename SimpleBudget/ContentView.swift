@@ -307,12 +307,6 @@ private struct BudgetDial: View {
         return max(amount / dialRange, 0)
     }
     private var primaryTrim: Double { min(normalizedProgress, 1) }
-    private var overflowProgress: Double { max(normalizedProgress - 1, 0) }
-    private var overflowTrim: Double {
-        guard overflowProgress > 0 else { return 0 }
-        let remainder = overflowProgress.truncatingRemainder(dividingBy: 1)
-        return remainder == 0 ? 1 : remainder
-    }
     private var knobRotationProgress: Double {
         guard normalizedProgress >= 1 else { return primaryTrim }
         let wrapped = normalizedProgress.truncatingRemainder(dividingBy: 1)
@@ -362,35 +356,25 @@ private struct BudgetDial: View {
 
             VStack(spacing: 12) {
                 ZStack {
-                    Circle()
-                        .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
-                        .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
-
-                    let fillGradient = AngularGradient(
-                        colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
-                        center: .center,
-                        startAngle: .degrees(0),
-                        endAngle: .degrees(primaryTrim * 360)
-                    )
-
-                    Circle()
-                        .trim(from: 0, to: primaryTrim)
-                        .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
-
                     if overBudget {
                         Circle()
-                            .trim(from: 0, to: overflowTrim)
-                            .stroke(
-                                AngularGradient(
-                                    colors: [Color.red.opacity(0.65), .red],
-                                    center: .center,
-                                    startAngle: .degrees(0),
-                                    endAngle: .degrees(overflowTrim * 360)
-                                ),
-                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
-                            )
+                            .stroke(Color.red, lineWidth: ringWidth)
+                            .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+                    } else {
+                        Circle()
+                            .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
+                            .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+
+                        let fillGradient = AngularGradient(
+                            colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(primaryTrim * 360)
+                        )
+
+                        Circle()
+                            .trim(from: 0, to: primaryTrim)
+                            .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                             .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
                     }
