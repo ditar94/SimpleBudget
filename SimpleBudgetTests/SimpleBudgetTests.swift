@@ -66,7 +66,11 @@ struct SimpleBudgetTests {
         let remaining = monthlyBudget - transactions.reduce(0, +)
 
         let halfwaySelection = remaining / 2
-        let metrics = BudgetDialScalingMetrics(amount: halfwaySelection, remainingBudget: remaining)
+        let metrics = BudgetDialScalingMetrics(
+            amount: halfwaySelection,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget
+        )
 
         #expect(metrics.dialRange == remaining)
         #expect(metrics.primaryTrim == 0.5)
@@ -77,7 +81,40 @@ struct SimpleBudgetTests {
         let preExistingTransactions = [350.0]
         let remaining = monthlyBudget - preExistingTransactions.reduce(0, +)
 
-        let metrics = BudgetDialScalingMetrics(amount: 500, remainingBudget: remaining)
+        let metrics = BudgetDialScalingMetrics(
+            amount: 500,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget
+        )
+
+        #expect(metrics.dialRange == remaining)
+        #expect(metrics.primaryTrim == 1)
+        #expect(metrics.knobRotationProgress == 0.25)
+    }
+
+    @Test func dialRangeCapsWhenRefundsExceedBudget() async throws {
+        let monthlyBudget: Double = 500
+        let surplusRemaining = 700.0
+
+        let metrics = BudgetDialScalingMetrics(
+            amount: 0,
+            remainingBudget: surplusRemaining,
+            monthlyBudget: monthlyBudget
+        )
+
+        #expect(metrics.dialRange == 500)
+        #expect(metrics.primaryTrim == 0)
+    }
+
+    @Test func dialRangeIgnoresPreviewOverage() async throws {
+        let monthlyBudget: Double = 300
+        let remaining = monthlyBudget
+
+        let metrics = BudgetDialScalingMetrics(
+            amount: 800,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget
+        )
 
         #expect(metrics.dialRange == remaining)
         #expect(metrics.primaryTrim == 1)
