@@ -335,6 +335,16 @@ private struct BudgetDial: View {
     private var notZero: Bool { amount > 0 }
     private var projectedTotal: Double { currentSpent + amount }
     private var remainingAfterSelection: Double { max(monthlyBudget - projectedTotal, 0) }
+    private var remainingDaysInMonth: Int {
+        let calendar = Calendar.current
+        let today = calendar.component(.day, from: .now)
+        let daysInMonth = calendar.range(of: .day, in: .month, for: .now)?.count ?? today
+        return max(daysInMonth - today + 1, 1)
+    }
+    private var perDayAllowance: Double {
+        guard remainingDaysInMonth > 0 else { return 0 }
+        return remainingAfterSelection / Double(remainingDaysInMonth)
+    }
     private var isMonthOverBudget: Bool { monthlyBudget > 0 && currentSpent >= monthlyBudget }
     private var isProjectedOverBudget: Bool { monthlyBudget > 0 && projectedTotal >= monthlyBudget }
     private var overageAmount: Double { max(projectedTotal - monthlyBudget, 0) }
@@ -438,6 +448,12 @@ private struct BudgetDial: View {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(statusBackground)
                     )
+
+                if !isMonthOverBudget && !isProjectedOverBudget {
+                    Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.secondaryLabel)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
             .contentShape(Rectangle())
