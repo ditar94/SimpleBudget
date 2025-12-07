@@ -366,17 +366,28 @@ private struct BudgetDial: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            let ringWidth: CGFloat = 18
-            let ringRadius = min(proxy.size.width, proxy.size.height) / 2 - ringWidth / 2
-            let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
-            let endPoint = CGPoint(
-                x: center.x + cos(CGFloat(endAngle.radians)) * ringRadius,
-                y: center.y + sin(CGFloat(endAngle.radians)) * ringRadius
-            )
+        VStack(spacing: 10) {
+            GeometryReader { proxy in
+                let dialSize = min(proxy.size.width, proxy.size.height)
+                let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
+                let ringWidth: CGFloat = 18
+                let ringRadius = dialSize / 2 - ringWidth / 2
+                let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
+                let endPoint = CGPoint(
+                    x: center.x + cos(CGFloat(endAngle.radians)) * ringRadius,
+                    y: center.y + sin(CGFloat(endAngle.radians)) * ringRadius
+                )
+                let dragGesture = DragGesture(minimumDistance: 0, coordinateSpace: .named("dial"))
+                    .updating($isDragging) { _, state, _ in
+                        state = true
+                    }
+                    .onChanged { value in
+                        updateAmount(from: value.location, in: CGSize(width: dialSize, height: dialSize))
+                    }
+                    .onEnded { _ in
+                        resetDragState()
+                    }
 
-            VStack(spacing: 10) {
                 ZStack {
                     if isMonthOverBudget || isProjectedOverBudget {
                         Circle()
@@ -405,6 +416,8 @@ private struct BudgetDial: View {
                         .fill(Color.black)
                         .frame(width: 17, height: 17)
                         .position(endPoint)
+                        .contentShape(Circle().inset(by: -28))
+                        .highPriorityGesture(dragGesture)
 
                     VStack(spacing: 6) {
                         Text("$ ")
@@ -416,51 +429,42 @@ private struct BudgetDial: View {
                         Button {
                             amount = 0
                         } label: {
-                           
+
                                 HStack(spacing: 6) {
                                     Image(systemName: "xmark")
                                     Text("Clear")
                                         .font(.system(size: 13, weight: .semibold))
                                 }
                                 .foregroundStyle(notZero ? Color.secondaryLabel : Color.pageBackground)
-                        
+
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
-
-                Text(statusText)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(statusForeground)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(statusBackground)
-                    )
-
-                if !isMonthOverBudget && !isProjectedOverBudget {
-                    Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.secondaryLabel)
-                }
+                .frame(width: dialSize, height: dialSize, alignment: .center)
+                .contentShape(Circle().inset(by: -24))
+                .coordinateSpace(name: "dial")
+                .gesture(dragGesture)
             }
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .updating($isDragging) { _, state, _ in
-                        state = true
-                    }
-                    .onChanged { value in
-                        updateAmount(from: value.location, in: proxy.size)
-                    }
-                    .onEnded { _ in
-                        resetDragState()
-                    }
-            )
+            .aspectRatio(1, contentMode: .fit)
+
+            Text(statusText)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(statusForeground)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(statusBackground)
+                )
+
+            if !isMonthOverBudget && !isProjectedOverBudget {
+                Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.secondaryLabel)
+            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func updateAmount(from location: CGPoint, in size: CGSize) {
