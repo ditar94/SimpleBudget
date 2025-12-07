@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 
+// Persistent model capturing a single spending transaction
 @Model
 final class Transaction {
     var amount: Double = 0

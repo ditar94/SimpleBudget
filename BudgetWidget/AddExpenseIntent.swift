@@ -3,6 +3,7 @@ import SwiftData
 import WidgetKit
 import Foundation
 
+// App Intent enabling quick expense creation from widgets and shortcuts
 struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Quick Add Expense"
     static var description = IntentDescription("Add an expense from your lock screen or Home Screen widget.")
@@ -23,6 +24,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     @Parameter(title: "Note", default: "")
     var note: String
 
+    // Persists a new transaction into the shared model container
     func perform() async throws -> some IntentResult {
         let container = try WidgetModelContainer.shared
         let context = ModelContext(container)
@@ -40,6 +42,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     }
 }
 
+// Factory for a SwiftData container that can be shared with the widget extension
 enum WidgetModelContainer {
     static var shared: ModelContainer {
         get throws {

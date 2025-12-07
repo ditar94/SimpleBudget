@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+// Persistent model representing a budget category associated with a settings record
 @Model
 final class BudgetCategory: Identifiable, Hashable {
     var id: UUID = UUID()
@@ -21,6 +22,7 @@ final class BudgetCategory: Identifiable, Hashable {
     }
 }
 
+// Persistent model storing user-configurable budget preferences and category relationships
 @Model
 final class BudgetSettings {
     var monthlyBudget: Double = 2000
@@ -38,6 +40,7 @@ final class BudgetSettings {
     }
 }
 
+// Helpers to bootstrap and seed default settings for new containers
 extension BudgetSettings {
     static let defaultCategories = [
         "Food",

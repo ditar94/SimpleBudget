@@ -7,6 +7,7 @@
 
 import XCTest
 
+// UI test scaffold generated for SimpleBudget interactions
 final class SimpleBudgetUITests: XCTestCase {
 
     override func setUpWithError() throws {
