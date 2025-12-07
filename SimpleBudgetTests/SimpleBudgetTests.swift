@@ -64,12 +64,14 @@ struct SimpleBudgetTests {
         let monthlyBudget: Double = 1_200
         let transactions = [200.0, 175.0, 25.0]
         let remaining = monthlyBudget - transactions.reduce(0, +)
+        let spent = monthlyBudget - remaining
 
         let halfwaySelection = remaining / 2
         let metrics = BudgetDialScalingMetrics(
             amount: halfwaySelection,
             remainingBudget: remaining,
-            monthlyBudget: monthlyBudget
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
         )
 
         #expect(metrics.dialRange == remaining)
@@ -80,11 +82,13 @@ struct SimpleBudgetTests {
         let monthlyBudget: Double = 800
         let preExistingTransactions = [350.0]
         let remaining = monthlyBudget - preExistingTransactions.reduce(0, +)
+        let spent = monthlyBudget - remaining
 
         let metrics = BudgetDialScalingMetrics(
             amount: 500,
             remainingBudget: remaining,
-            monthlyBudget: monthlyBudget
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
         )
 
         #expect(metrics.dialRange == remaining)
@@ -95,30 +99,50 @@ struct SimpleBudgetTests {
     @Test func dialRangeCapsWhenRefundsExceedBudget() async throws {
         let monthlyBudget: Double = 500
         let surplusRemaining = 700.0
+        let spent = monthlyBudget - surplusRemaining
 
         let metrics = BudgetDialScalingMetrics(
             amount: 0,
             remainingBudget: surplusRemaining,
-            monthlyBudget: monthlyBudget
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
         )
 
         #expect(metrics.dialRange == 500)
         #expect(metrics.primaryTrim == 0)
     }
 
-    @Test func dialRangeIgnoresPreviewOverage() async throws {
+    @Test func dialRangeCapsForPreviewOverage() async throws {
         let monthlyBudget: Double = 300
         let remaining = monthlyBudget
+        let spent = monthlyBudget - remaining
 
         let metrics = BudgetDialScalingMetrics(
             amount: 800,
             remainingBudget: remaining,
-            monthlyBudget: monthlyBudget
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
         )
 
-        #expect(metrics.dialRange == remaining)
+        #expect(metrics.dialRange == 500)
         #expect(metrics.primaryTrim == 1)
-        #expect(metrics.knobRotationProgress == 0.25)
+        #expect(metrics.knobRotationProgress == 0.6)
+    }
+
+    @Test func dialRangeCapsForExistingOverage() async throws {
+        let monthlyBudget: Double = 400
+        let currentSpent = 550.0
+        let remaining = monthlyBudget - currentSpent
+
+        let metrics = BudgetDialScalingMetrics(
+            amount: 50,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget,
+            currentSpent: currentSpent
+        )
+
+        #expect(metrics.dialRange == 500)
+        #expect(metrics.primaryTrim == 0.1)
     }
 
 }
