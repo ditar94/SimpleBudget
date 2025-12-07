@@ -488,6 +488,70 @@ private struct BudgetDial: View {
     }
 }
 
+// A flexible horizontal layout that wraps subviews onto new lines as needed
+private struct WrappingHStack: Layout {
+    var spacing: CGFloat = 8
+    var lineSpacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let availableWidth = proposal.width ?? .infinity
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+        var lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            let itemWidth = size.width
+            let itemHeight = size.height
+
+            // Wrap to next line if this item doesn't fit
+            if currentX > 0 && currentX + spacing + itemWidth > availableWidth {
+                currentX = 0
+                currentY += lineHeight + lineSpacing
+                lineHeight = 0
+            }
+
+            if currentX > 0 { currentX += spacing }
+            currentX += itemWidth
+            lineHeight = max(lineHeight, itemHeight)
+        }
+
+        // If width is not constrained, return the total width consumed; otherwise honor available width
+        let finalWidth = availableWidth.isFinite ? availableWidth : currentX
+        return CGSize(width: finalWidth, height: currentY + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let availableWidth = bounds.width
+        var currentX = bounds.minX
+        var currentY = bounds.minY
+        var lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            let itemWidth = size.width
+            let itemHeight = size.height
+
+            // Wrap to next line if this item doesn't fit
+            if currentX > bounds.minX && currentX + spacing + itemWidth > bounds.minX + availableWidth {
+                currentX = bounds.minX
+                currentY += lineHeight + lineSpacing
+                lineHeight = 0
+            }
+
+            if currentX > bounds.minX { currentX += spacing }
+
+            subview.place(
+                at: CGPoint(x: currentX, y: currentY),
+                proposal: ProposedViewSize(width: itemWidth, height: itemHeight)
+            )
+
+            currentX += itemWidth
+            lineHeight = max(lineHeight, itemHeight)
+        }
+    }
+}
+
 // Scrollable chip selector for choosing expense categories
 private struct CategoryChips: View {
     let categories: [String]
@@ -495,18 +559,16 @@ private struct CategoryChips: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
+            WrappingHStack(spacing: 10, lineSpacing: 10) {
                 ForEach(categories, id: \.self) { name in
                     let isSelected = name == selection
                     Button {
                         selection = name
                     } label: {
                         Text(name)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .padding(.vertical, 7)
                             .padding(.horizontal, 12)
-                            .frame(minWidth: 46)
-                            .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
                                     .fill(isSelected ? Color.primaryBlue : Color.cardBackground)
@@ -521,7 +583,7 @@ private struct CategoryChips: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxHeight: 200)
+        .frame(maxHeight: 80)
     }
 }
 
@@ -1107,3 +1169,4 @@ private struct TransactionRow: View {
     ContentView()
         .modelContainer(for: [Transaction.self, BudgetSettings.self, BudgetCategory.self], inMemory: true)
 }
+
