@@ -13,7 +13,7 @@ private extension Color {
     static let primaryBlue = Color(red: 0.25, green: 0.55, blue: 1.0)
     static let primaryText = Color(red: 0.12, green: 0.14, blue: 0.2)
     static let secondaryLabel = Color(red: 0.45, green: 0.5, blue: 0.58)
-    static let cardBackground = Color.white
+    static let cardBackground = Color(red: 0.96, green: 0.97, blue: 0.99)
     static let pageBackground = Color(red: 0.96, green: 0.97, blue: 0.99)
     static let border = Color(red: 0.88, green: 0.91, blue: 0.96)
 }
@@ -256,7 +256,7 @@ private struct ExpenseDialCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 30) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Set expense amount")
@@ -276,23 +276,24 @@ private struct ExpenseDialCard: View {
                             .fill(Color.primaryBlue.opacity(0.12))
                     )
             }
+            
 
             BudgetDial(
                 amount: amountBinding,
                 remainingBudget: remainingBudget,
                 currencyCode: currencyCode
             )
-            .frame(height: 180)
+            .frame(height: 250)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color.cardBackground)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.border, lineWidth: 1)
-        )
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 20, style: .continuous)
+//                .stroke(Color.border, lineWidth: 1)
+//        )
     }
 }
 
@@ -368,7 +369,7 @@ private struct BudgetDial: View {
                 y: center.y + sin(CGFloat(endAngle.radians)) * ringRadius
             )
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ZStack {
                     if overBudget {
                         Circle()
@@ -400,7 +401,7 @@ private struct BudgetDial: View {
 
                     VStack(spacing: 6) {
                         Text("$ ")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 30, weight: .bold))
                             .foregroundStyle(Color.primaryBlue)
                             + Text(amount, format: .number.precision(.fractionLength(0)))
                             .font(.system(size: 38, weight: .bold, design: .rounded))
