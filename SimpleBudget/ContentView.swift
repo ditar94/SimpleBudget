@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 
+// Shared color palette for consistent styling across views
 private extension Color {
     static let primaryBlue = Color(red: 0.25, green: 0.55, blue: 1.0)
     static let primaryText = Color(red: 0.12, green: 0.14, blue: 0.2)
@@ -17,6 +18,7 @@ private extension Color {
     static let border = Color(red: 0.88, green: 0.91, blue: 0.96)
 }
 
+// Root tab view orchestrating expense entry, history, and settings
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
@@ -38,10 +40,12 @@ struct ContentView: View {
         return names.isEmpty ? BudgetSettings.defaultCategories : names
     }
 
+    // Tab identifiers for the main application sections
     private enum Tab: Hashable {
         case add, history, settings
     }
 
+    // Main container displaying each tab
     var body: some View {
         TabView(selection: $selectedTab) {
             AddExpenseTab(
@@ -86,6 +90,7 @@ struct ContentView: View {
         .toolbarBackground(.visible, for: .tabBar)
     }
 
+    // Handles adding a new transaction from user input
     private func addTransaction(_ draft: TransactionDraft) {
         guard draft.isValid else { return }
 
@@ -99,18 +104,21 @@ struct ContentView: View {
         modelContext.insert(transaction)
     }
 
+    // Removes transactions at provided offsets within a given list
     private func deleteTransactions(at offsets: IndexSet, in list: [Transaction]) {
         offsets.forEach { index in
             modelContext.delete(list[index])
         }
     }
 
+    // Convenience wrapper to delete from the main query-backed transaction list
     private func deleteTransactions(offsets: IndexSet) {
         withAnimation {
             deleteTransactions(at: offsets, in: transactions)
         }
     }
 
+    // Adds a new budget category while ensuring uniqueness
     private func addCategory(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -124,6 +132,7 @@ struct ContentView: View {
         settings.categories = updated
     }
 
+    // Deletes a category and cleans up its association with settings
     private func deleteCategory(_ category: BudgetCategory) {
         if var current = settings.categories, let index = current.firstIndex(of: category) {
             current.remove(at: index)
@@ -132,6 +141,7 @@ struct ContentView: View {
         modelContext.delete(category)
     }
 
+    // Updates the monthly budget while preventing negative values
     private func updateBudget(_ newValue: Double) {
         settings.monthlyBudget = max(0, newValue)
     }
@@ -139,6 +149,7 @@ struct ContentView: View {
 
 // MARK: - Add Expense
 
+// Tab presenting the form and dial for creating a new expense
 private struct AddExpenseTab: View {
     let transactions: [Transaction]
     let settings: BudgetSettings
@@ -229,6 +240,7 @@ private struct AddExpenseTab: View {
     }
 }
 
+// Card wrapping the dial and header for selecting expense amounts
 private struct ExpenseDialCard: View {
     let remainingBudget: Double
     let currencyCode: String
@@ -284,6 +296,7 @@ private struct ExpenseDialCard: View {
     }
 }
 
+// Computes the smallest directional difference between two angles in degrees
 func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Double {
     let rawDelta = current - previous
     let wrapped = ((rawDelta + 180).truncatingRemainder(dividingBy: 360) + 360)
@@ -291,6 +304,7 @@ func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Doub
     return wrapped - 180
 }
 
+// Interactive radial dial used to adjust the expense amount
 private struct BudgetDial: View {
     @Binding var amount: Double
     let remainingBudget: Double
@@ -473,6 +487,7 @@ private struct BudgetDial: View {
     }
 }
 
+// Scrollable chip selector for choosing expense categories
 private struct CategoryChips: View {
     let categories: [String]
     @Binding var selection: String
@@ -506,6 +521,7 @@ private struct CategoryChips: View {
     }
 }
 
+// Legacy form-style expense entry used in alternate flows
 private struct AddExpenseForm: View {
     let categories: [String]
     var onSave: (TransactionDraft) -> Void
@@ -556,6 +572,7 @@ private struct AddExpenseForm: View {
     }
 }
 
+// Data holder used for binding form fields before creating a Transaction
 struct TransactionDraft {
     var amountText: String = ""
     var category: String = BudgetSettings.defaultCategories.first ?? "General"
@@ -586,6 +603,7 @@ struct TransactionDraft {
 
 // MARK: - Monthly overview
 
+// Tab summarizing spending for a selected month with deletion support
 private struct MonthlyExpensesTab: View {
     let transactions: [Transaction]
     let monthlyBudget: Double
@@ -635,6 +653,7 @@ private struct MonthlyExpensesTab: View {
     }
 }
 
+// Summary card highlighting spending progress and remaining budget
 private struct MonthSummaryCard: View {
     let month: Date
     let spent: Double
@@ -719,6 +738,7 @@ private struct MonthSummaryCard: View {
     }
 }
 
+// Header control for navigating between months in history view
 private struct MonthSelector: View {
     @Binding var selectedMonth: Date
 
@@ -761,6 +781,7 @@ private struct MonthSelector: View {
     }
 }
 
+// List section summarizing transactions for the selected month
 private struct TransactionsSection: View {
     let transactions: [Transaction]
     var onDelete: (IndexSet) -> Void
@@ -814,6 +835,7 @@ private struct TransactionsSection: View {
     }
 }
 
+// Card-styled row displaying transaction details and quick actions
 private struct TransactionCard: View {
     let transaction: Transaction
 
@@ -885,6 +907,7 @@ private struct TransactionCard: View {
 
 // MARK: - Settings
 
+// Tab for adjusting budget preferences and managing categories
 private struct SettingsTab: View {
     let settings: BudgetSettings
     let categories: [BudgetCategory]
@@ -1034,6 +1057,9 @@ private struct SettingsTab: View {
 
 // MARK: - Transaction row
 
+// MARK: - Transaction row
+
+// Compact row used in list previews of transactions
 private struct TransactionRow: View {
     let transaction: Transaction
 

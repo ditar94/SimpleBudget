@@ -8,6 +8,7 @@
 import Testing
 @testable import SimpleBudget
 
+// Unit tests covering angle calculations and transaction amount parsing
 struct SimpleBudgetTests {
 
     @Test func clockwiseCrossesZeroWithSmallDelta() async throws {

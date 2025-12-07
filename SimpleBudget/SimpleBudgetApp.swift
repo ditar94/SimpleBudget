@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import Foundation
 
+// Application entry point configuring shared data container and launching the root view
 @main
 struct SimpleBudgetApp: App {
     private static let groupIdentifier = "group.com.example.SimpleBudget"

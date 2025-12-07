@@ -2,6 +2,7 @@ import SwiftUI
 import WidgetKit
 import SwiftData
 
+// Timeline entry carrying budget details and the quick intent configuration
 struct BudgetEntry: TimelineEntry {
     let date: Date
     let remaining: Double
@@ -9,6 +10,7 @@ struct BudgetEntry: TimelineEntry {
     let quickIntent: AddExpenseIntent
 }
 
+// Provider building the widget timeline from shared SwiftData storage
 struct BudgetWidgetProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> BudgetEntry {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
@@ -51,6 +53,7 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
 struct BudgetWidget: Widget {
     let kind: String = "BudgetWidget"
 
+    // Main widget configuration supporting multiple families
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AddExpenseIntent.self, provider: BudgetWidgetProvider()) { entry in
             BudgetWidgetView(entry: entry)
@@ -64,6 +67,7 @@ struct BudgetWidget: Widget {
 struct BudgetWidgetView: View {
     let entry: BudgetEntry
 
+    // Compact UI summarizing remaining budget and launching quick add intent
     var body: some View {
         VStack(alignment: .leading) {
             HStack {

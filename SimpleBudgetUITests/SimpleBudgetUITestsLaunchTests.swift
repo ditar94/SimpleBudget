@@ -7,6 +7,7 @@
 
 import XCTest
 
+// Launch performance smoke tests for SimpleBudget
 final class SimpleBudgetUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
