@@ -314,9 +314,15 @@ struct BudgetDialScalingMetrics {
     let amount: Double
     let remainingBudget: Double
     let monthlyBudget: Double
+    let currentSpent: Double
+
+    private var projectedTotal: Double { currentSpent + amount }
 
     private var shouldCapRange: Bool {
-        monthlyBudget > 0 && remainingBudget > monthlyBudget
+        guard monthlyBudget > 0 else { return false }
+        return remainingBudget > monthlyBudget
+            || currentSpent > monthlyBudget
+            || projectedTotal > monthlyBudget
     }
 
     var dialRange: Double { shouldCapRange ? 500 : max(remainingBudget, 1) }
@@ -352,7 +358,8 @@ private struct BudgetDial: View {
         BudgetDialScalingMetrics(
             amount: amount,
             remainingBudget: remainingBudget,
-            monthlyBudget: monthlyBudget
+            monthlyBudget: monthlyBudget,
+            currentSpent: currentSpent
         )
     }
 
@@ -401,6 +408,8 @@ private struct BudgetDial: View {
         }
         return Color.gray
     }
+
+    private let dialDiameter: CGFloat = 190
 
     var body: some View {
         VStack(spacing: 10) {
@@ -483,6 +492,8 @@ private struct BudgetDial: View {
                 .coordinateSpace(name: "dial")
                 .gesture(dragGesture)
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: dialDiameter)
             .aspectRatio(1, contentMode: .fit)
 
             Text(statusText)
@@ -495,11 +506,16 @@ private struct BudgetDial: View {
                         .fill(statusBackground)
                 )
 
-            if !isMonthOverBudget && !isProjectedOverBudget {
-                Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.secondaryLabel)
+            Group {
+                if !isMonthOverBudget && !isProjectedOverBudget {
+                    Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
+                } else {
+                    Text("Daily allowance placeholder")
+                        .hidden()
+                }
             }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.secondaryLabel)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
