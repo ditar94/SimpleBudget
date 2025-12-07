@@ -420,8 +420,7 @@ private struct BudgetDial: View {
                         .buttonStyle(.plain)
                     }
                 }
-
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
 
                 Text(statusText)
                     .font(.system(size: 13, weight: .semibold))
@@ -433,7 +432,7 @@ private struct BudgetDial: View {
                             .fill(statusBackground)
                     )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
