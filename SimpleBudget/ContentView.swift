@@ -324,6 +324,30 @@ private struct BudgetDial: View {
         guard remainingBudget > 0 else { return max(amount, 0) }
         return max(amount - remainingBudget, 0)
     }
+    private var statusText: String {
+        if overBudget {
+            return "Over by \(overageAmount, format: .currency(code: currencyCode))"
+        } else if isDragging {
+            return "Adjusting… Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))"
+        }
+        return "Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))"
+    }
+    private var statusBackground: Color {
+        if overBudget {
+            return Color.red.opacity(0.12)
+        } else if isDragging {
+            return Color.blue.opacity(0.12)
+        }
+        return Color.gray.opacity(0.12)
+    }
+    private var statusForeground: Color {
+        if overBudget {
+            return .red
+        } else if isDragging {
+            return .blue
+        }
+        return Color.gray
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -337,68 +361,73 @@ private struct BudgetDial: View {
                 y: center.y + sin(CGFloat(endAngle.radians)) * knobRadius
             )
 
-            ZStack {
-                Circle()
-                    .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
-
-                let fillGradient = AngularGradient(
-                    colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
-                    center: .center,
-                    startAngle: .degrees(0),
-                    endAngle: .degrees(primaryTrim * 360)
-                )
-
-                Circle()
-                    .trim(from: 0, to: primaryTrim)
-                    .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-
-                if overBudget {
+            VStack(spacing: 12) {
+                ZStack {
                     Circle()
-                        .trim(from: 0, to: overflowTrim)
-                        .stroke(
-                            AngularGradient(
-                                colors: [Color.red.opacity(0.65), .red],
-                                center: .center,
-                                startAngle: .degrees(0),
-                                endAngle: .degrees(overflowTrim * 360)
-                            ),
-                            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                }
+                        .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
 
-                Circle()
-                    .fill(overBudget ? Color.red : Color.primaryBlue)
-                    .frame(width: 16, height: 16)
-                    .position(endPoint)
-
-                VStack(spacing: 6) {
-                    Text("$ ")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.primaryBlue)
-                        + Text(amount, format: .number.precision(.fractionLength(0)))
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.primaryText)
-                    Text(
-                        overBudget
-                            ? "Over by \(overageAmount, format: .currency(code: currencyCode))"
-                            : "Remaining \(remainingAfterSelection, format: .currency(code: currencyCode))"
+                    let fillGradient = AngularGradient(
+                        colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
+                        center: .center,
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(primaryTrim * 360)
                     )
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.secondaryLabel)
-                    Button {
-                        amount = 0
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "xmark")
-                            Text("Clear")
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                        .foregroundStyle(Color.secondaryLabel)
+
+                    Circle()
+                        .trim(from: 0, to: primaryTrim)
+                        .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+
+                    if overBudget {
+                        Circle()
+                            .trim(from: 0, to: overflowTrim)
+                            .stroke(
+                                AngularGradient(
+                                    colors: [Color.red.opacity(0.65), .red],
+                                    center: .center,
+                                    startAngle: .degrees(0),
+                                    endAngle: .degrees(overflowTrim * 360)
+                                ),
+                                style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
                     }
-                    .buttonStyle(.plain)
+
+                    Circle()
+                        .fill(overBudget ? Color.red : Color.primaryBlue)
+                        .frame(width: 16, height: 16)
+                        .position(endPoint)
+
+                    VStack(spacing: 6) {
+                        Text("$ ")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color.primaryBlue)
+                            + Text(amount, format: .number.precision(.fractionLength(0)))
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.primaryText)
+                        Button {
+                            amount = 0
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "xmark")
+                                Text("Clear")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(Color.secondaryLabel)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
+
+                Text(statusText)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(statusForeground)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(statusBackground)
+                    )
             }
             .contentShape(Rectangle())
             .gesture(
