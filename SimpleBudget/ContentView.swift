@@ -411,7 +411,7 @@ private struct BudgetDial: View {
     private let dialDiameter: CGFloat = 500
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 6) {
             GeometryReader { proxy in
                 let dialSize = min(proxy.size.width, proxy.size.height)
                 let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
@@ -499,7 +499,7 @@ private struct BudgetDial: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(statusForeground)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(statusBackground)
@@ -515,6 +515,7 @@ private struct BudgetDial: View {
             }
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(Color.secondaryLabel)
+            .padding(.vertical, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
