@@ -63,9 +63,7 @@ struct ContentView: View {
                 transactions: transactions,
                 monthlyBudget: settings.monthlyBudget,
                 selectedMonth: $selectedMonth,
-                onDelete: { offsets, list in
-                    deleteTransactions(at: offsets, in: list)
-                }
+                onDelete: deleteTransaction
             )
             .tag(Tab.history)
             .tabItem {
@@ -104,17 +102,10 @@ struct ContentView: View {
         modelContext.insert(transaction)
     }
 
-    // Removes transactions at provided offsets within a given list
-    private func deleteTransactions(at offsets: IndexSet, in list: [Transaction]) {
-        offsets.forEach { index in
-            modelContext.delete(list[index])
-        }
-    }
-
-    // Convenience wrapper to delete from the main query-backed transaction list
-    private func deleteTransactions(offsets: IndexSet) {
+    // Removes a transaction when confirmed by the user
+    private func deleteTransaction(_ transaction: Transaction) {
         withAnimation {
-            deleteTransactions(at: offsets, in: transactions)
+            modelContext.delete(transaction)
         }
     }
 
@@ -698,7 +689,7 @@ private struct MonthlyExpensesTab: View {
     let transactions: [Transaction]
     let monthlyBudget: Double
     @Binding var selectedMonth: Date
-    var onDelete: (IndexSet, [Transaction]) -> Void
+    var onDelete: (Transaction) -> Void
 
     private var monthTransactions: [Transaction] {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: selectedMonth, toGranularity: .month) }
@@ -736,9 +727,7 @@ private struct MonthlyExpensesTab: View {
 
                 TransactionsSection(
                     transactions: monthTransactions,
-                    onDelete: { indexSet in
-                        onDelete(indexSet, monthTransactions)
-                    }
+                    onDelete: onDelete
                 )
             }
             .listStyle(.plain)
@@ -883,9 +872,9 @@ private struct MonthSelector: View {
 // List section summarizing transactions for the selected month
 private struct TransactionsSection: View {
     let transactions: [Transaction]
-    var onDelete: (IndexSet) -> Void
+    var onDelete: (Transaction) -> Void
 
-    @State private var pendingDeletion: IndexSet?
+    @State private var pendingDeletion: Transaction?
     @State private var showingDeleteConfirmation = false
 
     var body: some View {
@@ -900,14 +889,14 @@ private struct TransactionsSection: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 12, trailing: 20))
                 .listRowBackground(Color(.systemGroupedBackground))
             } else {
-                ForEach(Array(transactions.enumerated()), id: \.element.id) { index, transaction in
+                ForEach(transactions, id: \.id) { transaction in
                     TransactionCard(transaction: transaction)
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color(.systemGroupedBackground))
-                        .swipeActions {
+                        .swipeActions(allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                pendingDeletion = IndexSet(integer: index)
+                                pendingDeletion = transaction
                                 showingDeleteConfirmation = true
                             } label: {
                                 Label("Delete", systemImage: "trash")
