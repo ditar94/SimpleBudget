@@ -337,7 +337,8 @@ private struct BudgetDial: View {
         } else if isDragging {
             return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
         }
-        return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
+        
+                return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
     }
     private var statusBackground: Color {
         if overBudget {
@@ -728,7 +729,7 @@ private struct MonthSummaryCard: View {
 
     private var progress: Double {
         guard limit > 0 else { return 0 }
-        return min(spent / limit, 1)
+        return min(spent / limit, 2)
     }
 
     var body: some View {

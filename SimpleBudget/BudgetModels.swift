@@ -25,12 +25,12 @@ final class BudgetCategory: Identifiable, Hashable {
 // Persistent model storing user-configurable budget preferences and category relationships
 @Model
 final class BudgetSettings {
-    var monthlyBudget: Double = 2000
+    var monthlyBudget: Double = 500
     var lastSyncedAt: Date
     @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.settings) var categories: [BudgetCategory]? = []
 
     init(
-        monthlyBudget: Double = 2000,
+        monthlyBudget: Double = 500,
         lastSyncedAt: Date = Date(),
         categories: [BudgetCategory]? = []
     ) {
