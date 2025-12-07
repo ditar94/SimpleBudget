@@ -408,12 +408,12 @@ private struct BudgetDial: View {
         return Color.gray
     }
 
-    private let dialDiameter: CGFloat = 500
+    private let maxDialDiameter: CGFloat = 360
 
     var body: some View {
         VStack(spacing: 6) {
             GeometryReader { proxy in
-                let dialSize = min(proxy.size.width, proxy.size.height)
+                let dialSize = min(proxy.size.width, maxDialDiameter)
                 let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
                 let ringWidth: CGFloat = 18
                 let ringRadius = dialSize / 2 - ringWidth / 2
@@ -492,7 +492,7 @@ private struct BudgetDial: View {
                 .gesture(dragGesture)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: dialDiameter)
+            .frame(maxWidth: maxDialDiameter)
             .aspectRatio(1, contentMode: .fit)
 
             Text(statusText)
