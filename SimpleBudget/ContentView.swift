@@ -352,9 +352,10 @@ private struct BudgetDial: View {
     var body: some View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
-            let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            let dialSize = size
+            let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
             let ringWidth: CGFloat = 18
-            let knobRadius = size / 2
+            let knobRadius = dialSize / 2
             let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * knobRadius,
@@ -418,6 +419,7 @@ private struct BudgetDial: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .frame(width: dialSize, height: dialSize)
 
                 Text(statusText)
                     .font(.system(size: 13, weight: .semibold))
@@ -436,7 +438,13 @@ private struct BudgetDial: View {
                         state = true
                     }
                     .onChanged { value in
-                        updateAmount(from: value.location, in: proxy.size)
+                        let dialFrame = CGRect(
+                            x: (proxy.size.width - dialSize) / 2,
+                            y: 0,
+                            width: dialSize,
+                            height: dialSize
+                        )
+                        updateAmount(from: value.location, in: dialFrame)
                     }
                     .onEnded { _ in
                         resetDragState()
@@ -445,8 +453,12 @@ private struct BudgetDial: View {
         }
     }
 
-    private func updateAmount(from location: CGPoint, in size: CGSize) {
-        let angle = normalizedAngle(for: location, in: size)
+    private func updateAmount(from location: CGPoint, in dialFrame: CGRect) {
+        let dialLocation = CGPoint(
+            x: min(max(location.x - dialFrame.minX, 0), dialFrame.width),
+            y: min(max(location.y - dialFrame.minY, 0), dialFrame.height)
+        )
+        let angle = normalizedAngle(for: dialLocation, in: dialFrame.size)
 
         if previousAngle == nil {
             previousAngle = angle
