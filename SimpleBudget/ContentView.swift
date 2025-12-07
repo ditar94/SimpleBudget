@@ -172,6 +172,8 @@ private struct AddExpenseTab: View {
             VStack(alignment: .leading, spacing: 50) {
                 ExpenseDialCard(
                     remainingBudget: remainingBudget,
+                    monthlyBudget: settings.monthlyBudget,
+                    currentSpent: currentMonthTotal,
                     currencyCode: Locale.current.currency?.identifier ?? "USD",
                     draft: $draft
                 )
@@ -240,6 +242,8 @@ private struct AddExpenseTab: View {
 // Card wrapping the dial and header for selecting expense amounts
 private struct ExpenseDialCard: View {
     let remainingBudget: Double
+    let monthlyBudget: Double
+    let currentSpent: Double
     let currencyCode: String
     @Binding var draft: TransactionDraft
 
@@ -278,6 +282,8 @@ private struct ExpenseDialCard: View {
             BudgetDial(
                 amount: amountBinding,
                 remainingBudget: remainingBudget,
+                monthlyBudget: monthlyBudget,
+                currentSpent: currentSpent,
                 currencyCode: currencyCode
             )
             .frame(height: 250)
@@ -306,6 +312,8 @@ func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Doub
 private struct BudgetDial: View {
     @Binding var amount: Double
     let remainingBudget: Double
+    let monthlyBudget: Double
+    let currentSpent: Double
     let currencyCode: String
 
     @GestureState private var isDragging = false
@@ -313,7 +321,7 @@ private struct BudgetDial: View {
     @State private var progressDelta: Double = 0
     @State private var previousAngle: Double?
 
-    private var dialRange: Double { max(remainingBudget, 0) }
+    private var dialRange: Double { max(max(remainingBudget, monthlyBudget), 1) }
     private var normalizedProgress: Double {
         guard dialRange > 0 else { return 0 }
         return max(amount / dialRange, 0)
@@ -324,24 +332,23 @@ private struct BudgetDial: View {
         let wrapped = normalizedProgress.truncatingRemainder(dividingBy: 1)
         return wrapped == 0 ? 1 : wrapped
     }
-    private var overBudget: Bool { remainingBudget > 0 ? amount > remainingBudget : amount > 0 }
     private var notZero: Bool { amount > 0 }
-    private var remainingAfterSelection: Double { max(remainingBudget - amount, 0) }
-    private var overageAmount: Double {
-        guard remainingBudget > 0 else { return max(amount, 0) }
-        return max(amount - remainingBudget, 0)
-    }
+    private var projectedTotal: Double { currentSpent + amount }
+    private var remainingAfterSelection: Double { max(monthlyBudget - projectedTotal, 0) }
+    private var isMonthOverBudget: Bool { monthlyBudget > 0 && currentSpent >= monthlyBudget }
+    private var isProjectedOverBudget: Bool { monthlyBudget > 0 && projectedTotal >= monthlyBudget }
+    private var overageAmount: Double { max(projectedTotal - monthlyBudget, 0) }
     private var statusText: String {
-        if overBudget {
+        if isMonthOverBudget || isProjectedOverBudget {
             return "⚠️ Over by \(overageAmount.formatted(.currency(code: currencyCode)))"
         } else if isDragging {
             return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
         }
-        
-                return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
+
+        return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
     }
     private var statusBackground: Color {
-        if overBudget {
+        if isMonthOverBudget || isProjectedOverBudget {
             return Color.red.opacity(0.12)
         } else if isDragging {
             return Color.blue.opacity(0.12)
@@ -349,7 +356,7 @@ private struct BudgetDial: View {
         return Color.gray.opacity(0.12)
     }
     private var statusForeground: Color {
-        if overBudget {
+        if isMonthOverBudget || isProjectedOverBudget {
             return .red
         } else if isDragging {
             return .blue
@@ -370,7 +377,7 @@ private struct BudgetDial: View {
 
             VStack(spacing: 10) {
                 ZStack {
-                    if overBudget {
+                    if isMonthOverBudget || isProjectedOverBudget {
                         Circle()
                             .stroke(Color.red, lineWidth: ringWidth)
                             .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
