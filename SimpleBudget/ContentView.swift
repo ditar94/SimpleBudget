@@ -494,8 +494,8 @@ private struct CategoryChips: View {
     @Binding var selection: String
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
                 ForEach(categories, id: \.self) { name in
                     let isSelected = name == selection
                     Button {
@@ -506,6 +506,7 @@ private struct CategoryChips: View {
                             .padding(.vertical, 7)
                             .padding(.horizontal, 12)
                             .frame(minWidth: 46)
+                            .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
                                     .fill(isSelected ? Color.primaryBlue : Color.cardBackground)
@@ -518,7 +519,9 @@ private struct CategoryChips: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxHeight: 200)
     }
 }
 
