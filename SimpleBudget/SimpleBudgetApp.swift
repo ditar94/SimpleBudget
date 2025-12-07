@@ -14,6 +14,7 @@ import Foundation
 struct SimpleBudgetApp: App {
     private static let groupIdentifier = "group.com.example.SimpleBudget"
     private static let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
+    private static let isUITesting = ProcessInfo.processInfo.arguments.contains("UI-Testing")
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -23,7 +24,14 @@ struct SimpleBudgetApp: App {
         ])
         let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
         let primaryConfiguration: ModelConfiguration = {
-            if supportsAppGroup {
+            if isUITesting {
+                return ModelConfiguration(
+                    "ui-testing",
+                    schema: schema,
+                    isStoredInMemoryOnly: true,
+                    allowsSave: true
+                )
+            } else if supportsAppGroup {
                 return ModelConfiguration(
                     "shared-config",
                     schema: schema,
@@ -44,7 +52,11 @@ struct SimpleBudgetApp: App {
         }()
 
         do {
-            return try ModelContainer(for: schema, configurations: [primaryConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [primaryConfiguration])
+            if isUITesting {
+                seedUITestData(in: container)
+            }
+            return container
         } catch {
             // Fallback to a local-only store to keep the app running when entitlements
             // or CloudKit availability cause initialization to fail (e.g., Simulator).
@@ -67,5 +79,29 @@ struct SimpleBudgetApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+    }
+}
+
+private extension SimpleBudgetApp {
+    static func seedUITestData(in container: ModelContainer) {
+        let context = ModelContext(container)
+        let settings = BudgetSettings.bootstrap(in: context)
+
+        if let budgetOverride = ProcessInfo.processInfo.environment["UITEST_BUDGET"],
+           let budgetValue = Double(budgetOverride) {
+            settings.monthlyBudget = budgetValue
+        }
+
+        if ProcessInfo.processInfo.arguments.contains("UITestSeedRefund") {
+            let refund = Transaction(
+                amount: -200,
+                category: "Refund",
+                date: .now,
+                notes: "UITest Seed"
+            )
+            context.insert(refund)
+        }
+
+        try? context.save()
     }
 }

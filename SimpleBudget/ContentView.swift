@@ -313,8 +313,13 @@ func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Doub
 struct BudgetDialScalingMetrics {
     let amount: Double
     let remainingBudget: Double
+    let monthlyBudget: Double
 
-    var dialRange: Double { max(remainingBudget, 1) }
+    private var shouldCapRange: Bool {
+        monthlyBudget > 0 && remainingBudget > monthlyBudget
+    }
+
+    var dialRange: Double { shouldCapRange ? 500 : max(remainingBudget, 1) }
 
     var normalizedProgress: Double {
         guard dialRange > 0 else { return 0 }
@@ -344,7 +349,11 @@ private struct BudgetDial: View {
     @State private var previousAngle: Double?
 
     private var scaling: BudgetDialScalingMetrics {
-        BudgetDialScalingMetrics(amount: amount, remainingBudget: remainingBudget)
+        BudgetDialScalingMetrics(
+            amount: amount,
+            remainingBudget: remainingBudget,
+            monthlyBudget: monthlyBudget
+        )
     }
 
     private var dialRange: Double { scaling.dialRange }
@@ -493,6 +502,10 @@ private struct BudgetDial: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("BudgetDial")
+        .accessibilityLabel("Budget Dial")
+        .accessibilityValue("range:\(Int(dialRange.rounded()))")
     }
 
     private func updateAmount(from location: CGPoint, in size: CGSize) {
