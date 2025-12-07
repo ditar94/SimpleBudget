@@ -326,9 +326,9 @@ private struct BudgetDial: View {
     }
     private var statusText: String {
         if overBudget {
-            return "Over by \(overageAmount.formatted(.currency(code: currencyCode)))"
+            return "⚠️ Over by \(overageAmount.formatted(.currency(code: currencyCode)))"
         } else if isDragging {
-            return "Adjusting… Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
+            return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
         }
         return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
     }
