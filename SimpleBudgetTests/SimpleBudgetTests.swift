@@ -60,4 +60,28 @@ struct SimpleBudgetTests {
         #expect(parsedDraft.amount == 1_523.75)
     }
 
+    @Test func dialRangeTracksRemainingBudgetAfterPreviousSpending() async throws {
+        let monthlyBudget: Double = 1_200
+        let transactions = [200.0, 175.0, 25.0]
+        let remaining = monthlyBudget - transactions.reduce(0, +)
+
+        let halfwaySelection = remaining / 2
+        let metrics = BudgetDialScalingMetrics(amount: halfwaySelection, remainingBudget: remaining)
+
+        #expect(metrics.dialRange == remaining)
+        #expect(metrics.primaryTrim == 0.5)
+    }
+
+    @Test func dialWrapsAfterSelectingBeyondRemainingBudget() async throws {
+        let monthlyBudget: Double = 800
+        let preExistingTransactions = [350.0]
+        let remaining = monthlyBudget - preExistingTransactions.reduce(0, +)
+
+        let metrics = BudgetDialScalingMetrics(amount: 500, remainingBudget: remaining)
+
+        #expect(metrics.dialRange == remaining)
+        #expect(metrics.primaryTrim == 1)
+        #expect(metrics.knobRotationProgress == 0.25)
+    }
+
 }

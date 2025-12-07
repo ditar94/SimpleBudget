@@ -309,6 +309,27 @@ func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Doub
     return wrapped - 180
 }
 
+/// Extracted scaling math for the budget dial so it can be validated in tests.
+struct BudgetDialScalingMetrics {
+    let amount: Double
+    let remainingBudget: Double
+
+    var dialRange: Double { max(remainingBudget, 1) }
+
+    var normalizedProgress: Double {
+        guard dialRange > 0 else { return 0 }
+        return max(amount / dialRange, 0)
+    }
+
+    var primaryTrim: Double { min(normalizedProgress, 1) }
+
+    var knobRotationProgress: Double {
+        guard normalizedProgress >= 1 else { return primaryTrim }
+        let wrapped = normalizedProgress.truncatingRemainder(dividingBy: 1)
+        return wrapped == 0 ? 1 : wrapped
+    }
+}
+
 // Interactive radial dial used to adjust the expense amount
 private struct BudgetDial: View {
     @Binding var amount: Double
@@ -322,17 +343,14 @@ private struct BudgetDial: View {
     @State private var progressDelta: Double = 0
     @State private var previousAngle: Double?
 
-    private var dialRange: Double { max(max(remainingBudget, monthlyBudget), 1) }
-    private var normalizedProgress: Double {
-        guard dialRange > 0 else { return 0 }
-        return max(amount / dialRange, 0)
+    private var scaling: BudgetDialScalingMetrics {
+        BudgetDialScalingMetrics(amount: amount, remainingBudget: remainingBudget)
     }
-    private var primaryTrim: Double { min(normalizedProgress, 1) }
-    private var knobRotationProgress: Double {
-        guard normalizedProgress >= 1 else { return primaryTrim }
-        let wrapped = normalizedProgress.truncatingRemainder(dividingBy: 1)
-        return wrapped == 0 ? 1 : wrapped
-    }
+
+    private var dialRange: Double { scaling.dialRange }
+    private var normalizedProgress: Double { scaling.normalizedProgress }
+    private var primaryTrim: Double { scaling.primaryTrim }
+    private var knobRotationProgress: Double { scaling.knobRotationProgress }
     private var notZero: Bool { amount > 0 }
     private var projectedTotal: Double { currentSpent + amount }
     private var remainingAfterSelection: Double { max(monthlyBudget - projectedTotal, 0) }
