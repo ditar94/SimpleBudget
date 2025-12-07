@@ -894,13 +894,14 @@ private struct TransactionsSection: View {
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color(.systemGroupedBackground))
-                        .swipeActions(allowsFullSwipe: false) {
-                            Button(role: .destructive) {
+                        .swipeActions(allowsFullSwipe: true) {
+                            Button {
                                 pendingDeletion = transaction
                                 showingDeleteConfirmation = true
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
+                            .tint(.red)
                         }
                 }
             }
