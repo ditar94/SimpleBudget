@@ -869,6 +869,9 @@ private struct TransactionsSection: View {
     let transactions: [Transaction]
     var onDelete: (IndexSet) -> Void
 
+    @State private var pendingDeletion: IndexSet?
+    @State private var showingDeleteConfirmation = false
+
     var body: some View {
         Section {
             if transactions.isEmpty {
@@ -887,7 +890,10 @@ private struct TransactionsSection: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color(.systemGroupedBackground))
                 }
-                .onDelete(perform: onDelete)
+                .onDelete { offsets in
+                    pendingDeletion = offsets
+                    showingDeleteConfirmation = true
+                }
             }
         } header: {
             HStack {
@@ -909,6 +915,20 @@ private struct TransactionsSection: View {
             .padding(.top, 12)
             .padding(.bottom, 4)
             .background(Color(.systemGroupedBackground))
+        }
+        .alert("Delete transaction?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                if let pendingDeletion {
+                    onDelete(pendingDeletion)
+                }
+                pendingDeletion = nil
+            }
+
+            Button("Cancel", role: .cancel) {
+                pendingDeletion = nil
+            }
+        } message: {
+            Text("This action cannot be undone.")
         }
     }
 }
