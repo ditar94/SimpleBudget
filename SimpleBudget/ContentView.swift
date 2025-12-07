@@ -287,7 +287,6 @@ private struct ExpenseDialCard: View {
                 currentSpent: currentSpent,
                 currencyCode: currencyCode
             )
-            .frame(height: 250)
         }
         .padding(16)
         .background(
@@ -314,9 +313,15 @@ struct BudgetDialScalingMetrics {
     let amount: Double
     let remainingBudget: Double
     let monthlyBudget: Double
+    let currentSpent: Double
+
+    private var projectedTotal: Double { currentSpent + amount }
 
     private var shouldCapRange: Bool {
-        monthlyBudget > 0 && remainingBudget > monthlyBudget
+        guard monthlyBudget > 0 else { return false }
+        return remainingBudget > monthlyBudget
+            || currentSpent > monthlyBudget
+            || projectedTotal > monthlyBudget
     }
 
     var dialRange: Double { shouldCapRange ? 500 : max(remainingBudget, 1) }
@@ -352,7 +357,8 @@ private struct BudgetDial: View {
         BudgetDialScalingMetrics(
             amount: amount,
             remainingBudget: remainingBudget,
-            monthlyBudget: monthlyBudget
+            monthlyBudget: monthlyBudget,
+            currentSpent: currentSpent
         )
     }
 
@@ -402,8 +408,10 @@ private struct BudgetDial: View {
         return Color.gray
     }
 
+    private let dialDiameter: CGFloat = 500
+
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 6) {
             GeometryReader { proxy in
                 let dialSize = min(proxy.size.width, proxy.size.height)
                 let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
@@ -483,23 +491,31 @@ private struct BudgetDial: View {
                 .coordinateSpace(name: "dial")
                 .gesture(dragGesture)
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: dialDiameter)
             .aspectRatio(1, contentMode: .fit)
 
             Text(statusText)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(statusForeground)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(statusBackground)
                 )
 
-            if !isMonthOverBudget && !isProjectedOverBudget {
-                Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.secondaryLabel)
+            Group {
+                if !isMonthOverBudget && !isProjectedOverBudget {
+                    Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
+                } else {
+                    Text("Daily allowance placeholder")
+                        .hidden()
+                }
             }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.secondaryLabel)
+            .padding(.vertical, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
