@@ -170,7 +170,6 @@ private struct AddExpenseTab: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 50) {
-                Spacer()
                 ExpenseDialCard(
                     remainingBudget: remainingBudget,
                     currencyCode: Locale.current.currency?.identifier ?? "USD",
@@ -229,8 +228,6 @@ private struct AddExpenseTab: View {
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color.pageBackground)
-            .navigationTitle("New Expense")
-            .ignoresSafeArea()
             .onAppear {
                 if draft.category.isEmpty {
                     draft.category = categories.first ?? "General"
@@ -259,8 +256,8 @@ private struct ExpenseDialCard: View {
         VStack(alignment: .leading, spacing: 30) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Set expense amount")
-                        .font(.system(size: 16, weight: .semibold))
+                    Text("New Expense")
+                        .font(.system(size: 25, weight: .semibold))
 //                    Text("Drag around the dial to fine-tune your spend.")
 //                        .font(.system(size: 13))
 //                        .foregroundStyle(Color.secondaryLabel)
@@ -328,6 +325,7 @@ private struct BudgetDial: View {
         return wrapped == 0 ? 1 : wrapped
     }
     private var overBudget: Bool { remainingBudget > 0 ? amount > remainingBudget : amount > 0 }
+    private var notZero: Bool { amount > 0 }
     private var remainingAfterSelection: Double { max(remainingBudget - amount, 0) }
     private var overageAmount: Double {
         guard remainingBudget > 0 else { return max(amount, 0) }
@@ -409,12 +407,14 @@ private struct BudgetDial: View {
                         Button {
                             amount = 0
                         } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "xmark")
-                                Text("Clear")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
-                            .foregroundStyle(Color.secondaryLabel)
+                           
+                                HStack(spacing: 6) {
+                                    Image(systemName: "xmark")
+                                    Text("Clear")
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .foregroundStyle(notZero ? Color.secondaryLabel : Color.pageBackground)
+                        
                         }
                         .buttonStyle(.plain)
                     }
