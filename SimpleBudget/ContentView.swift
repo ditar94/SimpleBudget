@@ -698,10 +698,13 @@ private struct MonthlyExpensesTab: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 18) {
+            List {
+                Section {
                     MonthSelector(selectedMonth: $selectedMonth)
                         .padding(.top, 4)
+                        .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 6, trailing: 20))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color(.systemGroupedBackground))
 
                     MonthSummaryCard(
                         month: selectedMonth,
@@ -709,17 +712,23 @@ private struct MonthlyExpensesTab: View {
                         limit: monthlyBudget,
                         remaining: remaining
                     )
-
-                    TransactionsSection(
-                        transactions: monthTransactions,
-                        onDelete: { indexSet in
-                            onDelete(indexSet, monthTransactions)
-                        }
-                    )
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color(.systemGroupedBackground))
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+                .textCase(nil)
+
+                TransactionsSection(
+                    transactions: monthTransactions,
+                    onDelete: { indexSet in
+                        onDelete(indexSet, monthTransactions)
+                    }
+                )
             }
+            .listStyle(.plain)
+            .listSectionSeparator(.hidden)
+            .scrollIndicators(.hidden)
+            .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Monthly Overview")
             .navigationBarTitleDisplayMode(.inline)
@@ -861,7 +870,26 @@ private struct TransactionsSection: View {
     var onDelete: (IndexSet) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        Section {
+            if transactions.isEmpty {
+                ContentUnavailableView(
+                    "No expenses",
+                    systemImage: "tray",
+                    description: Text("Add transactions to see them here.")
+                )
+                .frame(maxWidth: .infinity)
+                .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 12, trailing: 20))
+                .listRowBackground(Color(.systemGroupedBackground))
+            } else {
+                ForEach(transactions) { transaction in
+                    TransactionCard(transaction: transaction)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color(.systemGroupedBackground))
+                }
+                .onDelete(perform: onDelete)
+            }
+        } header: {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Transactions")
@@ -877,35 +905,11 @@ private struct TransactionsSection: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-
-            if transactions.isEmpty {
-                ContentUnavailableView(
-                    "No expenses",
-                    systemImage: "tray",
-                    description: Text("Add transactions to see them here.")
-                )
-                .frame(maxWidth: .infinity)
-            } else {
-                LazyVStack(spacing: 12) {
-                    ForEach(Array(transactions.enumerated()), id: \.element.id) { index, transaction in
-                        TransactionCard(transaction: transaction)
-                            .swipeActions {
-                                Button(role: .destructive) {
-                                    onDelete(IndexSet(integer: index))
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                    }
-                }
-            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+            .background(Color(.systemGroupedBackground))
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
     }
 }
 
