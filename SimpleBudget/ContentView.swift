@@ -148,6 +148,8 @@ private struct AddExpenseTab: View {
     var onAdd: (TransactionDraft) -> Void
 
     @State private var draft = TransactionDraft()
+    @FocusState private var focusedField: Field?
+    private enum Field: Hashable { case note }
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
@@ -185,6 +187,7 @@ private struct AddExpenseTab: View {
                             .foregroundStyle(Color.secondaryLabel)
                             .textCase(.uppercase)
                         TextField("Note (optional)", text: $draft.note, axis: .vertical)
+                            .focused($focusedField, equals: .note)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .lineLimit(1...3)
@@ -199,6 +202,7 @@ private struct AddExpenseTab: View {
                     }
 
                     Button(action: {
+                        focusedField = nil
                         onAdd(draft)
                         draft = TransactionDraft(category: categories.first ?? "General")
                     }) {
@@ -224,6 +228,12 @@ private struct AddExpenseTab: View {
             .onAppear {
                 if draft.category.isEmpty {
                     draft.category = categories.first ?? "General"
+                }
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focusedField = nil }
                 }
             }
         }
@@ -614,6 +624,7 @@ private struct AddExpenseForm: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft = TransactionDraft()
+    @FocusState private var isNoteFocused: Bool
 
     var body: some View {
         Form {
@@ -630,6 +641,7 @@ private struct AddExpenseForm: View {
 
             Section("Notes") {
                 TextField("Optional note", text: $draft.note, axis: .vertical)
+                    .focused($isNoteFocused)
                     .lineLimit(2...4)
             }
         }
@@ -643,10 +655,15 @@ private struct AddExpenseForm: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
+                    isNoteFocused = false
                     onSave(draft)
                     onDismiss()
                 }
                 .disabled(!draft.isValid)
+            }
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { isNoteFocused = false }
             }
         }
         .onAppear {
