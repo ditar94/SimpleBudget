@@ -351,10 +351,10 @@ private struct BudgetDial: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let size = min(proxy.size.width, proxy.size.height)
+            let ringDiameter = min(proxy.size.width, proxy.size.height)
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let ringWidth: CGFloat = 18
-            let knobOrbitRadius = (size - ringWidth) / 2
+            let knobOrbitRadius = ringDiameter / 2
             let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
             let endPoint = CGPoint(
                 x: center.x + cos(CGFloat(endAngle.radians)) * knobOrbitRadius,
