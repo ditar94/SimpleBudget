@@ -287,7 +287,6 @@ private struct ExpenseDialCard: View {
                 currentSpent: currentSpent,
                 currencyCode: currencyCode
             )
-            .frame(height: 250)
         }
         .padding(16)
         .background(
@@ -409,7 +408,7 @@ private struct BudgetDial: View {
         return Color.gray
     }
 
-    private let dialDiameter: CGFloat = 190
+    private let dialDiameter: CGFloat = 500
 
     var body: some View {
         VStack(spacing: 10) {
