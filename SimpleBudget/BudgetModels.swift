@@ -26,16 +26,16 @@ final class BudgetCategory: Identifiable, Hashable {
 @Model
 final class BudgetSettings {
     var monthlyBudget: Double = 500
-    var lastSyncedAt: Date
+    var lastSyncedAt: Date = .now
     @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.settings) var categories: [BudgetCategory]? = []
 
     init(
         monthlyBudget: Double = 500,
-        lastSyncedAt: Date = Date(),
+        lastSyncedAt: Date? = nil,
         categories: [BudgetCategory]? = []
     ) {
         self.monthlyBudget = monthlyBudget
-        self.lastSyncedAt = lastSyncedAt
+        self.lastSyncedAt = lastSyncedAt ?? self.lastSyncedAt
         self.categories = categories
     }
 }
