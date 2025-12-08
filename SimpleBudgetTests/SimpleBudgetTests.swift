@@ -170,6 +170,30 @@ struct SimpleBudgetTests {
         #expect(overageMetrics.normalizedProgress == 1.15)
     }
 
+    @Test func categoriesAreFilteredAndUniquePerSettings() async throws {
+        let activeSettings = BudgetSettings()
+        let otherSettings = BudgetSettings()
+
+        let food = BudgetCategory(name: "Food")
+        food.settings = activeSettings
+
+        let duplicateFood = BudgetCategory(name: "food")
+        duplicateFood.settings = activeSettings
+
+        let travel = BudgetCategory(name: "Travel")
+        travel.settings = otherSettings
+
+        let groceries = BudgetCategory(name: "Groceries")
+        groceries.settings = activeSettings
+
+        let sanitized = ContentView.sanitizedCategories(
+            for: activeSettings,
+            from: [food, duplicateFood, travel, groceries]
+        )
+
+        #expect(sanitized == ["Food", "Groceries"])
+    }
+
     @Test func amountRoundTripsThroughProgressMapping() async throws {
         let monthlyBudget: Double = 1_000
         let remaining = 250.0
