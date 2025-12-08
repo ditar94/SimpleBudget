@@ -26,7 +26,8 @@
 /* Begin PBXFileReference section */
 		3EC2C6282EDFC49C0068D990 /* SimpleBudget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleBudget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3EC2C6392EDFC49C0068D990 /* SimpleBudgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleBudgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleBudgetUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleBudgetUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+5731E98452C848BAA078261D /* BudgetWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BudgetWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -40,70 +41,90 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		3EC2C62A2EDFC49C0068D990 /* SimpleBudget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				3EC2C64B2EDFC49C0068D990 /* Exceptions for "SimpleBudget" folder in "SimpleBudget" target */,
-			);
-			path = SimpleBudget;
-			sourceTree = "<group>";
-		};
-		3EC2C63C2EDFC49C0068D990 /* SimpleBudgetTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SimpleBudgetTests;
-			sourceTree = "<group>";
-		};
-		3EC2C6462EDFC49C0068D990 /* SimpleBudgetUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SimpleBudgetUITests;
-			sourceTree = "<group>";
-		};
+3EC2C62A2EDFC49C0068D990 /* SimpleBudget */ = {
+isa = PBXFileSystemSynchronizedRootGroup;
+exceptions = (
+3EC2C64B2EDFC49C0068D990 /* Exceptions for "SimpleBudget" folder in "SimpleBudget" target */,
+);
+path = SimpleBudget;
+sourceTree = "<group>";
+};
+65BEBC3EC9144DD4B05730B2 /* Shared */ = {
+isa = PBXFileSystemSynchronizedRootGroup;
+path = Shared;
+sourceTree = "<group>";
+};
+3EC2C63C2EDFC49C0068D990 /* SimpleBudgetTests */ = {
+isa = PBXFileSystemSynchronizedRootGroup;
+path = SimpleBudgetTests;
+sourceTree = "<group>";
+};
+3EC2C6462EDFC49C0068D990 /* SimpleBudgetUITests */ = {
+isa = PBXFileSystemSynchronizedRootGroup;
+path = SimpleBudgetUITests;
+sourceTree = "<group>";
+};
+E3E6E430BC2E4910BC4CF1BE /* BudgetWidget */ = {
+isa = PBXFileSystemSynchronizedRootGroup;
+path = BudgetWidget;
+sourceTree = "<group>";
+};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		3EC2C6252EDFC49C0068D990 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3EC2C6362EDFC49C0068D990 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3EC2C6402EDFC49C0068D990 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+3EC2C6252EDFC49C0068D990 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+3EC2C6362EDFC49C0068D990 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+3EC2C6402EDFC49C0068D990 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+22D2FBDA5F1A4DCE9F33DF03 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3EC2C61F2EDFC49C0068D990 = {
-			isa = PBXGroup;
-			children = (
-				3EC2C62A2EDFC49C0068D990 /* SimpleBudget */,
-				3EC2C63C2EDFC49C0068D990 /* SimpleBudgetTests */,
-				3EC2C6462EDFC49C0068D990 /* SimpleBudgetUITests */,
-				3EC2C6292EDFC49C0068D990 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		3EC2C6292EDFC49C0068D990 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				3EC2C6282EDFC49C0068D990 /* SimpleBudget.app */,
-				3EC2C6392EDFC49C0068D990 /* SimpleBudgetTests.xctest */,
-				3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
+3EC2C61F2EDFC49C0068D990 = {
+isa = PBXGroup;
+children = (
+65BEBC3EC9144DD4B05730B2 /* Shared */,
+E3E6E430BC2E4910BC4CF1BE /* BudgetWidget */,
+3EC2C62A2EDFC49C0068D990 /* SimpleBudget */,
+3EC2C63C2EDFC49C0068D990 /* SimpleBudgetTests */,
+3EC2C6462EDFC49C0068D990 /* SimpleBudgetUITests */,
+3EC2C6292EDFC49C0068D990 /* Products */,
+);
+sourceTree = "<group>";
+};
+3EC2C6292EDFC49C0068D990 /* Products */ = {
+isa = PBXGroup;
+children = (
+3EC2C6282EDFC49C0068D990 /* SimpleBudget.app */,
+3EC2C6392EDFC49C0068D990 /* SimpleBudgetTests.xctest */,
+3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */,
+5731E98452C848BAA078261D /* BudgetWidget.appex */,
+);
+name = Products;
+sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
@@ -120,9 +141,10 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				3EC2C62A2EDFC49C0068D990 /* SimpleBudget */,
-			);
+fileSystemSynchronizedGroups = (
+ 3EC2C62A2EDFC49C0068D990 /* SimpleBudget */,
+ 65BEBC3EC9144DD4B05730B2 /* Shared */,
+);
 			name = SimpleBudget;
 			packageProductDependencies = (
 			);
@@ -176,6 +198,30 @@
 			productReference = 3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		47C425F19DAC40479B33182B /* BudgetWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F48476E2788244EEBBB070FE /* Build configuration list for PBXNativeTarget "BudgetWidget" */;
+                        buildPhases = (
+                                6F1E05758E294A0DBAD4462E /* Sources */,
+                                22D2FBDA5F1A4DCE9F33DF03 /* Frameworks */,
+                                9265C1770AEE42ACB8656508 /* Resources */,
+                        );
+			buildRules = (
+			);
+			dependencies = (
+			);
+                        fileSystemSynchronizedGroups = (
+                                E3E6E430BC2E4910BC4CF1BE /* BudgetWidget */,
+                                65BEBC3EC9144DD4B05730B2 /* Shared */,
+                        );
+			name = BudgetWidget;
+			packageProductDependencies = (
+			);
+			productName = BudgetWidget;
+			productReference = 5731E98452C848BAA078261D /* BudgetWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +243,9 @@
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = 3EC2C6272EDFC49C0068D990;
 					};
+					47C425F19DAC40479B33182B = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
 				};
 			};
 			buildConfigurationList = 3EC2C6232EDFC49C0068D990 /* Build configuration list for PBXProject "SimpleBudget" */;
@@ -216,56 +265,71 @@
 				3EC2C6272EDFC49C0068D990 /* SimpleBudget */,
 				3EC2C6382EDFC49C0068D990 /* SimpleBudgetTests */,
 				3EC2C6422EDFC49C0068D990 /* SimpleBudgetUITests */,
+				47C425F19DAC40479B33182B /* BudgetWidget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		3EC2C6262EDFC49C0068D990 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3EC2C6372EDFC49C0068D990 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3EC2C6412EDFC49C0068D990 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+3EC2C6262EDFC49C0068D990 /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+3EC2C6372EDFC49C0068D990 /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+3EC2C6412EDFC49C0068D990 /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+9265C1770AEE42ACB8656508 /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		3EC2C6242EDFC49C0068D990 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3EC2C6352EDFC49C0068D990 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3EC2C63F2EDFC49C0068D990 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+3EC2C6242EDFC49C0068D990 /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+3EC2C6352EDFC49C0068D990 /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+3EC2C63F2EDFC49C0068D990 /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+6F1E05758E294A0DBAD4462E /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -592,6 +656,59 @@
 			};
 			name = Release;
 		};
+		5AC527B7F8634A1DBC8139BE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = BudgetWidget/BudgetWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BudgetWidget;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				INFOPLIST_KEY_NSExtension_NSExtensionPrincipalClass = "$(PRODUCT_MODULE_NAME).BudgetWidget";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WhiteSnek.BudgetWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+			};
+			name = Debug;
+		};
+		16395E1C5712463BA63825CB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = BudgetWidget/BudgetWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BudgetWidget;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				INFOPLIST_KEY_NSExtension_NSExtensionPrincipalClass = "$(PRODUCT_MODULE_NAME).BudgetWidget";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WhiteSnek.BudgetWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+			};
+			name = Release;
+		};
+
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -631,6 +748,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F48476E2788244EEBBB070FE /* Build configuration list for PBXNativeTarget "BudgetWidget" */ = {
+                        isa = XCConfigurationList;
+                        buildConfigurations = (
+                                5AC527B7F8634A1DBC8139BE /* Debug */,
+                                16395E1C5712463BA63825CB /* Release */,
+                        );
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+
 /* End XCConfigurationList section */
 	};
 	rootObject = 3EC2C6202EDFC49C0068D990 /* Project object */;
