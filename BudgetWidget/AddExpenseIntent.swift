@@ -42,6 +42,36 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     }
 }
 
+// Intent used by widget controls to modify the quick add amount directly from the widget surface
+struct AdjustQuickAmountIntent: AppIntent {
+    static var title: LocalizedStringResource = "Adjust Quick Amount"
+    static var description = IntentDescription("Increase or decrease the amount used by the quick add expense widget.")
+
+    @Parameter(title: "Delta")
+    var delta: Double
+
+    func perform() async throws -> some IntentResult {
+        let defaults = BudgetWidgetAmountStore.defaults
+        let hasExistingAmount = defaults.object(forKey: BudgetWidgetAmountStore.key) != nil
+        let current = hasExistingAmount
+            ? defaults.double(forKey: BudgetWidgetAmountStore.key)
+            : BudgetWidgetAmountStore.defaultAmount
+        let updated = max(0, current + delta)
+        defaults.set(updated, forKey: BudgetWidgetAmountStore.key)
+
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result(value: updated)
+    }
+}
+
+enum BudgetWidgetAmountStore {
+    static let key = "budget_widget_quick_amount"
+    static let defaultAmount: Double = 20
+    static let defaults: UserDefaults = {
+        UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
+    }()
+}
+
 // Factory for a SwiftData container that can be shared with the widget extension
 enum WidgetModelContainer {
     static var shared: ModelContainer {
