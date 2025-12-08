@@ -7,7 +7,11 @@ enum CrossProcessNotifier {
     static let versionDefaultsKey = "datastore_change_version"
 
     static var sharedDefaults: UserDefaults {
-        UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
+        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppIdentifiers.appGroup) != nil {
+            return UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
+        }
+
+        return .standard
     }
 
     /// Broadcasts a change signal to all processes sharing the app group.

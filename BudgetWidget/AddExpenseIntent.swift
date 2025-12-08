@@ -79,7 +79,11 @@ enum BudgetWidgetAmountStore {
     static let key = "budget_widget_quick_amount"
     static let defaultAmount: Double = 1
     static let defaults: UserDefaults = {
-        UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
+        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppIdentifiers.appGroup) != nil {
+            return UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
+        }
+
+        return .standard
     }()
 }
 
