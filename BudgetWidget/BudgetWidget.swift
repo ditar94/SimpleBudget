@@ -13,15 +13,18 @@ struct BudgetEntry: TimelineEntry {
 
 // Provider building the widget timeline from shared SwiftData storage
 struct BudgetWidgetProvider: AppIntentTimelineProvider {
+    typealias Entry = BudgetEntry
+    typealias Intent = AddExpenseIntent
+
     func placeholder(in context: Context) -> BudgetEntry {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
     }
 
-    func snapshot(for configuration: AddExpenseIntent, in context: Context, completion: @escaping (BudgetEntry) -> Void) {
+    func snapshot(for configuration: Intent, in context: Context, completion: @escaping (BudgetEntry) -> Void) {
         completion(BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: configuration))
     }
 
-    func timeline(for configuration: AddExpenseIntent, in context: Context, completion: @escaping (Timeline<BudgetEntry>) -> Void) {
+    func timeline(for configuration: Intent, in context: Context, completion: @escaping (Timeline<BudgetEntry>) -> Void) {
         let container = try? WidgetModelContainer.shared
         let modelContext = container.map(ModelContext.init)
 
