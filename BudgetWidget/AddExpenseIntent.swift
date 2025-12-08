@@ -48,11 +48,7 @@ enum WidgetModelContainer {
         get throws {
             let groupIdentifier = AppIdentifiers.appGroup
             let cloudKitIdentifier = AppIdentifiers.cloudContainer
-            let schema = Schema([
-                Transaction.self,
-                BudgetSettings.self,
-                BudgetCategory.self
-            ])
+            let schema = BudgetModelSchema.schema
             let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
             let primaryConfiguration: ModelConfiguration = {
                 if supportsAppGroup {
