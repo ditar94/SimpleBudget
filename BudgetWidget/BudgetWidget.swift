@@ -87,7 +87,7 @@ struct BudgetWidgetView: View {
 
     // Compact UI summarizing remaining budget and launching quick add intent
     var body: some View {
-        Group {
+        let content = Group {
             switch family {
             case .accessoryInline:
                 accessoryInlineView
@@ -98,6 +98,16 @@ struct BudgetWidgetView: View {
             default:
                 primaryWidgetView
             }
+        }
+
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            content
+                .containerBackground(for: .widget) {
+                    Color.clear
+                }
+        } else {
+            content
+                .background(Color.clear)
         }
     }
 
