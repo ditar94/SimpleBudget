@@ -20,11 +20,11 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
     }
 
-    func snapshot(for configuration: Intent, in context: Context, completion: @escaping (BudgetEntry) -> Void) {
-        completion(BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: configuration))
+    func snapshot(for configuration: Intent, in context: Context) async -> BudgetEntry {
+        BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: configuration)
     }
 
-    func timeline(for configuration: Intent, in context: Context, completion: @escaping (Timeline<BudgetEntry>) -> Void) {
+    func timeline(for configuration: Intent, in context: Context) async -> Timeline<BudgetEntry> {
         let container = try? WidgetModelContainer.shared
         let modelContext = container.map(ModelContext.init)
 
@@ -50,7 +50,7 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
             quickIntent: configuration
         )
 
-        completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60))))
+        return Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60)))
     }
 }
 
