@@ -66,28 +66,53 @@ struct BudgetWidget: Widget {
 
 struct BudgetWidgetView: View {
     let entry: BudgetEntry
+    @Environment(\.widgetFamily) private var family
+    @State private var pendingAmount: Double = 0
+
+    private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
+    private var remainingAfterPending: Double { entry.remaining - pendingAmount }
+    private var spendingProgress: Double {
+        min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1)
+    }
 
     // Compact UI summarizing remaining budget and launching quick add intent
     var body: some View {
-        VStack(alignment: .leading) {
+        Group {
+            switch family {
+            case .accessoryInline:
+                accessoryInlineView
+            case .accessoryCircular:
+                accessoryCircularView
+            case .accessoryRectangular:
+                accessoryRectangularView
+            default:
+                primaryWidgetView
+            }
+        }
+    }
+
+    // MARK: - Layouts
+
+    private var primaryWidgetView: some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Budget", systemImage: "creditcard")
                     .font(.headline)
                 Spacer()
-                Text(entry.monthlyBudget, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                Text(entry.monthlyBudget, format: .currency(code: currencyCode))
                     .font(.caption)
             }
-            ProgressView(value: min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1))
+
+            ProgressView(value: spendingProgress)
                 .tint(entry.remaining >= 0 ? Color.blue : Color.red)
-            HStack {
-                Text(entry.remaining >= 0 ? "Remaining" : "Over")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(entry.remaining, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(entry.remaining >= 0 ? Color.primary : Color.red)
+
+            VStack(alignment: .leading, spacing: 4) {
+                valueRow(title: entry.remaining >= 0 ? "Remaining" : "Over", value: entry.remaining, emphasizeNegative: true)
+                valueRow(title: "Remaining after", value: remainingAfterPending, emphasizeNegative: true)
             }
+
+            adjustmentControls(font: .body)
+
             Button(intent: entry.quickIntent) {
                 Label("Add expense", systemImage: "plus")
                     .frame(maxWidth: .infinity)
@@ -95,6 +120,118 @@ struct BudgetWidgetView: View {
             .buttonStyle(.borderedProminent)
         }
         .padding()
+    }
+
+    private var accessoryRectangularView: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Budget")
+                    .font(.caption.bold())
+                Spacer()
+                Text(entry.monthlyBudget, format: .currency(code: currencyCode))
+                    .font(.caption2)
+            }
+            ProgressView(value: spendingProgress)
+                .progressViewStyle(.linear)
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    valueRow(title: "Remain", value: entry.remaining, emphasizeNegative: true, compact: true)
+                    valueRow(title: "After", value: remainingAfterPending, emphasizeNegative: true, compact: true)
+                }
+                Spacer()
+                adjustmentControls(font: .caption2)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+
+    private var accessoryInlineView: some View {
+        HStack(spacing: 6) {
+            Text("After")
+            Text(remainingAfterPending, format: .currency(code: currencyCode))
+                .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+            adjustmentControls(font: .caption2, showCurrency: false)
+        }
+        .font(.caption2)
+    }
+
+    private var accessoryCircularView: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(.quaternary, lineWidth: 4)
+            Circle()
+                .trim(from: 0, to: spendingProgress)
+                .stroke(entry.remaining >= 0 ? Color.blue : Color.red, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            VStack(spacing: 2) {
+                Text("After")
+                    .font(.caption2)
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .font(.system(size: 10).monospacedDigit())
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            adjustmentControls(font: .caption2, showCurrency: false)
+                .padding(.bottom, 4)
+        }
+    }
+
+    // MARK: - Components
+
+    private func valueRow(title: String, value: Double, emphasizeNegative: Bool = false, compact: Bool = false) -> some View {
+        HStack {
+            Text(title)
+                .font(compact ? .caption2 : .caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value, format: .currency(code: currencyCode))
+                .font(compact ? .caption.bold() : .headline.weight(.semibold))
+                .foregroundStyle(emphasizeNegative && value < 0 ? Color.red : Color.primary)
+        }
+    }
+
+    private func adjustmentControls(font: Font, showCurrency: Bool = true) -> some View {
+        let step = adjustmentStep
+        return HStack(spacing: 6) {
+            Button {
+                adjustPending(by: -step)
+            } label: {
+                Image(systemName: "minus.circle.fill")
+            }
+            .buttonStyle(.plain)
+
+            if showCurrency {
+                Text(pendingAmount, format: .currency(code: currencyCode))
+                    .font(font.monospacedDigit())
+            } else {
+                Text(pendingAmount, format: .number.precision(.fractionLength(0)))
+                    .font(font.monospacedDigit())
+            }
+
+            Button {
+                adjustPending(by: step)
+            } label: {
+                Image(systemName: "plus.circle.fill")
+            }
+            .buttonStyle(.plain)
+        }
+        .font(font)
+    }
+
+    private func adjustPending(by delta: Double) {
+        let updated = pendingAmount + delta
+        pendingAmount = max(0, updated)
+    }
+
+    private var adjustmentStep: Double {
+        switch family {
+        case .accessoryInline, .accessoryCircular:
+            return 5
+        default:
+            return 10
+        }
     }
 }
 
