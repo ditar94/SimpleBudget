@@ -71,18 +71,25 @@ struct BudgetWidget: Widget {
 struct BudgetWidgetView: View {
     let entry: BudgetEntry
     @Environment(\.widgetFamily) private var family
-    @State private var quickIntent: AddExpenseIntent
+
+    @AppStorage(BudgetWidgetAmountStore.key, store: BudgetWidgetAmountStore.defaults)
+    private var storedAmount: Double = BudgetWidgetAmountStore.defaultAmount
 
     init(entry: BudgetEntry) {
         self.entry = entry
-        _quickIntent = State(initialValue: entry.quickIntent)
     }
 
     private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
-    private var pendingAmount: Double { quickIntent.amount }
+    private var pendingAmount: Double { storedAmount }
     private var remainingAfterPending: Double { entry.remaining - pendingAmount }
     private var spendingProgress: Double {
         min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1)
+    }
+
+    private var quickIntent: AddExpenseIntent {
+        var intent = entry.quickIntent
+        intent.amount = pendingAmount
+        return intent
     }
 
     // Compact UI summarizing remaining budget and launching quick add intent
@@ -209,11 +216,8 @@ struct BudgetWidgetView: View {
     }
 
     private func adjustmentControls(font: Font, showCurrency: Bool = true) -> some View {
-        let step = adjustmentStep
         return HStack(spacing: 6) {
-            Button {
-                adjustPending(by: -step)
-            } label: {
+            Button(intent: AdjustQuickAmountIntent(delta: -adjustmentStep)) {
                 Image(systemName: "minus.circle.fill")
             }
             .buttonStyle(.plain)
@@ -226,19 +230,12 @@ struct BudgetWidgetView: View {
                     .font(font.monospacedDigit())
             }
 
-            Button {
-                adjustPending(by: step)
-            } label: {
+            Button(intent: AdjustQuickAmountIntent(delta: adjustmentStep)) {
                 Image(systemName: "plus.circle.fill")
             }
             .buttonStyle(.plain)
         }
         .font(font)
-    }
-
-    private func adjustPending(by delta: Double) {
-        let updated = pendingAmount + delta
-        quickIntent.amount = max(0, updated)
     }
 
     private var adjustmentStep: Double {
