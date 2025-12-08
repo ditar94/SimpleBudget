@@ -47,8 +47,8 @@ struct AdjustQuickAmountIntent: AppIntent {
     static var title: LocalizedStringResource = "Adjust Quick Amount"
     static var description = IntentDescription("Increase or decrease the amount used by the quick add expense widget.")
 
-    @Parameter(title: "Delta")
-    var delta: Double = 0
+    @Parameter(title: "Delta", default: 0)
+    var delta: Double
 
     func perform() async throws -> some IntentResult {
         let defaults = BudgetWidgetAmountStore.defaults
