@@ -193,7 +193,7 @@ struct BudgetWidgetView: View {
                 .trim(from: 0, to: spendingProgress)
                 .stroke(entry.remaining >= 0 ? Color.blue : Color.red, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.easeOut(duration: 0.12), value: spendingProgress)
+                .animation(.easeOut(duration: 0.01), value: spendingProgress)
 
             VStack(spacing: 2) {
                 Text("After")
@@ -203,7 +203,7 @@ struct BudgetWidgetView: View {
                         .font(.system(size: 10).monospacedDigit())
                         .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
                         .contentTransition(.numericText(value: remainingAfterPending))
-                        .animation(.easeOut(duration: 0.12), value: remainingAfterPending)
+                        .animation(.easeOut(duration: 0.01), value: remainingAfterPending)
                 } else {
                     Text(remainingAfterPending, format: .currency(code: currencyCode))
                         .font(.system(size: 10).monospacedDigit())
@@ -230,7 +230,7 @@ struct BudgetWidgetView: View {
                     .font(compact ? .caption.bold() : .headline.weight(.semibold))
                     .foregroundStyle(emphasizeNegative && value < 0 ? Color.red : Color.primary)
                     .contentTransition(.numericText(value: value))
-                    .animation(.easeOut(duration: 0.12), value: value)
+                    .animation(.easeOut(duration: 0.01), value: value)
             } else {
                 Text(value, format: .currency(code: currencyCode))
                     .font(compact ? .caption.bold() : .headline.weight(.semibold))
@@ -251,7 +251,7 @@ struct BudgetWidgetView: View {
                     Text(pendingAmount, format: .currency(code: currencyCode))
                         .font(font.monospacedDigit())
                         .contentTransition(.numericText(value: pendingAmount))
-                        .animation(.easeOut(duration: 0.12), value: pendingAmount)
+                        .animation(.easeOut(duration: 0.01), value: pendingAmount)
                 } else {
                     Text(pendingAmount, format: .currency(code: currencyCode))
                         .font(font.monospacedDigit())
@@ -261,7 +261,7 @@ struct BudgetWidgetView: View {
                     Text(pendingAmount, format: .number.precision(.fractionLength(0)))
                         .font(font.monospacedDigit())
                         .contentTransition(.numericText(value: pendingAmount))
-                        .animation(.easeOut(duration: 0.12), value: pendingAmount)
+                        .animation(.easeOut(duration: 0.01), value: pendingAmount)
                 } else {
                     Text(pendingAmount, format: .number.precision(.fractionLength(0)))
                         .font(font.monospacedDigit())
@@ -280,9 +280,9 @@ struct BudgetWidgetView: View {
     private var adjustmentStep: Double {
         switch family {
         case .accessoryInline, .accessoryCircular:
-            return 5
+            return 1
         default:
-            return 10
+            return 1
         }
     }
 
