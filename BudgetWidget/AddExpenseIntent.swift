@@ -48,12 +48,13 @@ enum WidgetModelContainer {
         get throws {
             let groupIdentifier = AppIdentifiers.appGroup
             let cloudKitIdentifier = AppIdentifiers.cloudContainer
+            let storeName = AppIdentifiers.persistentStoreName
             let schema = BudgetModelSchema.schema
             let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
             let primaryConfiguration: ModelConfiguration = {
                 if supportsAppGroup {
                     return ModelConfiguration(
-                        "widget-config",
+                        storeName,
                         schema: schema,
                         isStoredInMemoryOnly: false,
                         allowsSave: true,
@@ -62,7 +63,7 @@ enum WidgetModelContainer {
                     )
                 } else {
                     return ModelConfiguration(
-                        "widget-local-config",
+                        storeName,
                         schema: schema,
                         isStoredInMemoryOnly: false,
                         allowsSave: true,
@@ -75,7 +76,7 @@ enum WidgetModelContainer {
                 return try ModelContainer(for: schema, configurations: [primaryConfiguration])
             } catch {
                 let fallbackConfiguration = ModelConfiguration(
-                    "widget-local-fallback",
+                    storeName,
                     schema: schema,
                     isStoredInMemoryOnly: false,
                     allowsSave: true

@@ -19,6 +19,7 @@ struct SimpleBudgetApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = BudgetModelSchema.schema
         let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
+        let storeName = AppIdentifiers.persistentStoreName
         let primaryConfiguration: ModelConfiguration = {
             if isUITesting {
                 return ModelConfiguration(
@@ -29,7 +30,7 @@ struct SimpleBudgetApp: App {
                 )
             } else if supportsAppGroup {
                 return ModelConfiguration(
-                    "shared-config",
+                    storeName,
                     schema: schema,
                     isStoredInMemoryOnly: false,
                     allowsSave: true,
@@ -38,7 +39,7 @@ struct SimpleBudgetApp: App {
                 )
             } else {
                 return ModelConfiguration(
-                    "local-config",
+                    storeName,
                     schema: schema,
                     isStoredInMemoryOnly: false,
                     allowsSave: true,
@@ -57,7 +58,7 @@ struct SimpleBudgetApp: App {
             // Fallback to a local-only store to keep the app running when entitlements
             // or CloudKit availability cause initialization to fail (e.g., Simulator).
             let fallbackConfiguration = ModelConfiguration(
-                "local-fallback",
+                storeName,
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 allowsSave: true
