@@ -93,6 +93,7 @@ struct ContentView: View {
         guard draft.isValid else { return }
 
         let transaction = Transaction(
+            title: draft.title,
             amount: draft.amount,
             category: draft.category,
             date: draft.date,
@@ -149,7 +150,7 @@ private struct AddExpenseTab: View {
 
     @State private var draft = TransactionDraft()
     @FocusState private var focusedField: Field?
-    private enum Field: Hashable { case note }
+    private enum Field: Hashable { case note, title }
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
@@ -182,6 +183,23 @@ private struct AddExpenseTab: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
+                        Text("Title")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.secondaryLabel)
+                            .textCase(.uppercase)
+                        TextField("Coffee run", text: $draft.title)
+                            .focused($focusedField, equals: .title)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.cardBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.border, lineWidth: 1)
+                            )
+
                         Text("Note")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(Color.secondaryLabel)
@@ -723,6 +741,7 @@ private struct AddExpenseForm: View {
             Section("Details") {
                 TextField("Amount", text: $draft.amountText)
                     .keyboardType(.decimalPad)
+                TextField("Title", text: $draft.title)
                 Picker("Category", selection: $draft.category) {
                     ForEach(categories, id: \.self) { name in
                         Text(name).tag(name)
@@ -771,6 +790,7 @@ struct TransactionDraft {
     var amountText: String = ""
     var category: String = BudgetSettings.defaultCategories.first ?? "General"
     var date: Date = .now
+    var title: String = ""
     var note: String = ""
 
     var amount: Double {
@@ -1106,9 +1126,15 @@ private struct TransactionCard: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(transaction.category)
+                Text(transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? transaction.category : transaction.title)
                     .font(.headline)
                     .lineLimit(1)
+
+                if !transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(transaction.category)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
 
                 if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(transaction.notes)
@@ -1325,8 +1351,13 @@ private struct TransactionRow: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.category)
+                Text(transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? transaction.category : transaction.title)
                     .font(.headline)
+                if !transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(transaction.category)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(transaction.notes)
                         .font(.caption)
