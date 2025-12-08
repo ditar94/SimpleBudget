@@ -6,9 +6,7 @@ enum CrossProcessNotifier {
     static let darwinNotificationName = CFNotificationName("com.whitesnek.simplebudget.datastore.changed" as CFString)
     static let versionDefaultsKey = "datastore_change_version"
 
-    static var sharedDefaults: UserDefaults {
-        UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
-    }
+    static var sharedDefaults: UserDefaults { AppGroupContainer.sharedDefaults }
 
     /// Broadcasts a change signal to all processes sharing the app group.
     static func signalDataChange() {
