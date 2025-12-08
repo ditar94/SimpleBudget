@@ -56,7 +56,7 @@ final class DarwinNotificationObserver {
     func stop() {
         guard isObserving else { return }
         let center = CFNotificationCenterGetDarwinNotifyCenter()
-        CFNotificationCenterRemoveObserver(center, Unmanaged.passUnretained(self).toOpaque(), name.rawValue, nil)
+        CFNotificationCenterRemoveObserver(center, Unmanaged.passUnretained(self).toOpaque(), name, nil)
         isObserving = false
     }
 
@@ -64,3 +64,4 @@ final class DarwinNotificationObserver {
         stop()
     }
 }
+
