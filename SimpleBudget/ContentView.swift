@@ -1193,8 +1193,8 @@ private struct SettingsTab: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(Color(.systemGray6))
                 )
-                .onChange(of: budgetText) { value in
-                    let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.monthlyBudget
+                .onChange(of: budgetText) { _, newValue in
+                    let parsed = Double(newValue.replacingOccurrences(of: ",", with: ".")) ?? settings.monthlyBudget
                     onUpdateBudget(parsed)
                 }
                 .onSubmit {
