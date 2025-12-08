@@ -12,8 +12,8 @@ import Foundation
 // Application entry point configuring shared data container and launching the root view
 @main
 struct SimpleBudgetApp: App {
-    private static let groupIdentifier = "group.com.example.SimpleBudget"
-    private static let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
+    private static let groupIdentifier = "group.WhiteSnek.SimpleBudget"
+    private static let cloudKitIdentifier = "iCloud.WhiteSnek.SimpleBudget"
     private static let isUITesting = ProcessInfo.processInfo.arguments.contains("UI-Testing")
 
     var sharedModelContainer: ModelContainer = {
