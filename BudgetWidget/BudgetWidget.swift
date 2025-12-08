@@ -87,7 +87,7 @@ struct BudgetWidgetView: View {
     }
 
     private var quickIntent: AddExpenseIntent {
-        var intent = entry.quickIntent
+        let intent = entry.quickIntent
         intent.amount = pendingAmount
         return intent
     }
@@ -259,7 +259,7 @@ struct BudgetWidgetView: View {
     private func quickAddControl(compact: Bool = false) -> some View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: quickIntent) {
-                Label("Add expense", systemImage: "plus")
+                Label("Add", systemImage: "plus")
                     .font(compact ? .body.weight(.semibold) : nil)
                     .labelStyle(.titleAndIcon)
                     .frame(maxWidth: compact ? nil : .infinity)
@@ -278,7 +278,7 @@ struct BudgetWidgetView: View {
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .systemMedium) {
     BudgetWidget()
 } timeline: {
     BudgetEntry(date: .now, remaining: 1200, monthlyBudget: 2000, quickIntent: AddExpenseIntent())

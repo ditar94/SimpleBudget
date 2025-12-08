@@ -93,7 +93,6 @@ struct ContentView: View {
         guard draft.isValid else { return }
 
         let transaction = Transaction(
-            title: draft.title,
             amount: draft.amount,
             category: draft.category,
             date: draft.date,
@@ -150,7 +149,7 @@ private struct AddExpenseTab: View {
 
     @State private var draft = TransactionDraft()
     @FocusState private var focusedField: Field?
-    private enum Field: Hashable { case note, title }
+    private enum Field: Hashable { case note}
 
     private var currentMonthTotal: Double {
         transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
@@ -180,30 +179,7 @@ private struct AddExpenseTab: View {
                             .textCase(.uppercase)
 
                         CategoryChips(categories: categories, selection: $draft.category)
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Title")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.secondaryLabel)
-                            .textCase(.uppercase)
-                        TextField("Coffee run", text: $draft.title)
-                            .focused($focusedField, equals: .title)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.cardBackground)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.border, lineWidth: 1)
-                            )
-
-                        Text("Note")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.secondaryLabel)
-                            .textCase(.uppercase)
+                        
                         TextField("Note (optional)", text: $draft.note, axis: .vertical)
                             .focused($focusedField, equals: .note)
                             .padding(.horizontal, 12)
@@ -218,6 +194,8 @@ private struct AddExpenseTab: View {
                                     .stroke(Color.border, lineWidth: 1)
                             )
                     }
+
+                  
 
                     Button(action: {
                         focusedField = nil

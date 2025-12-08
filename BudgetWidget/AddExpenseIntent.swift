@@ -74,7 +74,7 @@ struct AdjustQuickAmountIntent: AppIntent {
 
 enum BudgetWidgetAmountStore {
     static let key = "budget_widget_quick_amount"
-    static let defaultAmount: Double = 20
+    static let defaultAmount: Double = 1
     static let defaults: UserDefaults = {
         UserDefaults(suiteName: AppIdentifiers.appGroup) ?? .standard
     }()
