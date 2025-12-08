@@ -52,8 +52,8 @@ struct ContentView: View {
     private func startListeningForExternalChanges() {
         guard externalChangeObserver == nil else { return }
 
-        let observer = DarwinNotificationObserver(name: CrossProcessNotifier.darwinNotificationName) { [weak self] in
-            self?.handleExternalChangeSignal()
+        let observer = DarwinNotificationObserver(name: CrossProcessNotifier.darwinNotificationName) { [self] in
+            handleExternalChangeSignal()
         }
 
         externalChangeObserver = observer
