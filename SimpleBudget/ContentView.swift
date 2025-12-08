@@ -21,12 +21,15 @@ private extension Color {
 // Root tab view orchestrating expense entry, history, and settings
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query private var settingsCollection: [BudgetSettings]
     @Query(sort: \BudgetCategory.name) private var categoryModels: [BudgetCategory]
 
     @State private var selectedTab: Tab = .add
     @State private var selectedMonth: Date = .now
+    @State private var externalChangeObserver: DarwinNotificationObserver?
+    @State private var lastExternalChangeToken: TimeInterval?
 
     private var settings: BudgetSettings {
         if let settings = settingsCollection.first {
@@ -37,6 +40,53 @@ struct ContentView: View {
 
     private var categories: [String] {
         ContentView.sanitizedCategories(for: settings, from: categoryModels)
+    }
+
+    private func initializeExternalChangeTracking() {
+        if lastExternalChangeToken == nil {
+            lastExternalChangeToken = CrossProcessNotifier.latestChangeToken()
+        }
+        startListeningForExternalChanges()
+    }
+
+    private func startListeningForExternalChanges() {
+        guard externalChangeObserver == nil else { return }
+
+        let observer = DarwinNotificationObserver(name: CrossProcessNotifier.darwinNotificationName) {
+            handleExternalChangeSignal()
+        }
+
+        externalChangeObserver = observer
+        observer.start()
+    }
+
+    private func stopListeningForExternalChanges() {
+        externalChangeObserver?.stop()
+        externalChangeObserver = nil
+    }
+
+    private func evaluatePendingExternalChanges() {
+        let currentToken = CrossProcessNotifier.latestChangeToken()
+        guard currentToken != nil else { return }
+
+        if currentToken != lastExternalChangeToken {
+            lastExternalChangeToken = currentToken
+            refreshFromExternalChange()
+        }
+    }
+
+    @MainActor
+    private func handleExternalChangeSignal() {
+        lastExternalChangeToken = CrossProcessNotifier.latestChangeToken()
+        refreshFromExternalChange()
+    }
+
+    @MainActor
+    private func refreshFromExternalChange() {
+        modelContext.rollback()
+        _ = try? modelContext.fetch(FetchDescriptor<Transaction>())
+        _ = try? modelContext.fetch(FetchDescriptor<BudgetSettings>())
+        _ = try? modelContext.fetch(FetchDescriptor<BudgetCategory>())
     }
 
     // Tab identifiers for the main application sections
@@ -83,6 +133,18 @@ struct ContentView: View {
         }
         .onAppear {
             _ = settings
+            initializeExternalChangeTracking()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .active:
+                evaluatePendingExternalChanges()
+                startListeningForExternalChanges()
+            case .background, .inactive:
+                stopListeningForExternalChanges()
+            @unknown default:
+                break
+            }
         }
         .toolbarBackground(.visible, for: .tabBar)
     }
@@ -99,6 +161,7 @@ struct ContentView: View {
         )
 
         modelContext.insert(transaction)
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Removes a transaction when confirmed by the user
@@ -106,6 +169,8 @@ struct ContentView: View {
         withAnimation {
             modelContext.delete(transaction)
         }
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Adds a new budget category while ensuring uniqueness
@@ -120,6 +185,8 @@ struct ContentView: View {
         var updated = settings.categories ?? []
         updated.append(category)
         settings.categories = updated
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Deletes a category and cleans up its association with settings
@@ -129,11 +196,15 @@ struct ContentView: View {
             settings.categories = current
         }
         modelContext.delete(category)
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Updates the monthly budget while preventing negative values
     private func updateBudget(_ newValue: Double) {
         settings.monthlyBudget = max(0, newValue)
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 }
 
