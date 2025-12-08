@@ -123,14 +123,7 @@ struct BudgetWidgetView: View {
 
             adjustmentControls(font: .body)
 
-            AppIntentButton(quickIntent) {
-                Label("Add expense", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .simultaneousGesture(TapGesture().onEnded {
-                WidgetCenter.shared.reloadAllTimelines()
-            })
+            quickAddControl
         }
         .padding()
     }
@@ -244,6 +237,25 @@ struct BudgetWidgetView: View {
             return 5
         default:
             return 10
+        }
+    }
+
+    @ViewBuilder
+    private var quickAddControl: some View {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: quickIntent) {
+                Label("Add expense", systemImage: "plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .simultaneousGesture(TapGesture().onEnded {
+                WidgetCenter.shared.reloadAllTimelines()
+            })
+        } else {
+            Text("Requires latest OS for quick add")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
         }
     }
 }
