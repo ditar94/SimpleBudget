@@ -48,7 +48,7 @@ final class DarwinNotificationObserver {
             Task { @MainActor in
                 instance.handler()
             }
-        }, name, nil, .deliverImmediately)
+        }, name.rawValue, nil, .deliverImmediately)
 
         isObserving = true
     }
@@ -56,7 +56,7 @@ final class DarwinNotificationObserver {
     func stop() {
         guard isObserving else { return }
         let center = CFNotificationCenterGetDarwinNotifyCenter()
-        CFNotificationCenterRemoveObserver(center, Unmanaged.passUnretained(self).toOpaque(), name, nil)
+        CFNotificationCenterRemoveObserver(center, Unmanaged.passUnretained(self).toOpaque(), name.rawValue, nil)
         isObserving = false
     }
 
