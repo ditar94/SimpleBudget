@@ -74,7 +74,7 @@ struct SimpleBudgetTests {
             currentSpent: spent
         )
 
-        #expect(metrics.dialRange == remaining)
+        #expect(metrics.dialRange == remaining + 500)
         #expect(metrics.primaryTrim == 0.5)
     }
 
@@ -91,9 +91,9 @@ struct SimpleBudgetTests {
             currentSpent: spent
         )
 
-        #expect(metrics.dialRange == remaining)
+        #expect(metrics.dialRange == remaining + 500)
         #expect(metrics.primaryTrim == 1)
-        #expect(metrics.knobRotationProgress == 0.25)
+        #expect(metrics.knobRotationProgress == 1.1)
     }
 
     @Test func dialRangeCapsWhenRefundsExceedBudget() async throws {
@@ -108,7 +108,7 @@ struct SimpleBudgetTests {
             currentSpent: spent
         )
 
-        #expect(metrics.dialRange == 500)
+        #expect(metrics.dialRange == 1_000)
         #expect(metrics.primaryTrim == 0)
     }
 
@@ -124,9 +124,9 @@ struct SimpleBudgetTests {
             currentSpent: spent
         )
 
-        #expect(metrics.dialRange == 500)
+        #expect(metrics.dialRange == 800)
         #expect(metrics.primaryTrim == 1)
-        #expect(metrics.knobRotationProgress == 0.6)
+        #expect(metrics.knobRotationProgress == 2)
     }
 
     @Test func dialRangeCapsForExistingOverage() async throws {
@@ -142,7 +142,51 @@ struct SimpleBudgetTests {
         )
 
         #expect(metrics.dialRange == 500)
-        #expect(metrics.primaryTrim == 0.1)
+        #expect(metrics.primaryTrim == 1)
+        #expect(metrics.normalizedProgress == 1.1)
+    }
+
+    @Test func normalizedProgressRemainsContinuousOverBudgetBoundary() async throws {
+        let monthlyBudget: Double = 600
+        let remaining = 450.0
+        let spent = monthlyBudget - remaining
+
+        let metrics = BudgetDialScalingMetrics(
+            amount: remaining,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
+        )
+
+        #expect(metrics.normalizedProgress == 1)
+
+        let overageMetrics = BudgetDialScalingMetrics(
+            amount: remaining + 75,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
+        )
+
+        #expect(overageMetrics.normalizedProgress == 1.15)
+    }
+
+    @Test func amountRoundTripsThroughProgressMapping() async throws {
+        let monthlyBudget: Double = 1_000
+        let remaining = 250.0
+        let spent = monthlyBudget - remaining
+
+        let metrics = BudgetDialScalingMetrics(
+            amount: 0,
+            remainingBudget: remaining,
+            monthlyBudget: monthlyBudget,
+            currentSpent: spent
+        )
+
+        let overBudgetProgress = metrics.progress(for: remaining + 125)
+        #expect(metrics.amount(for: overBudgetProgress) == remaining + 125)
+
+        let withinBudgetProgress = metrics.progress(for: remaining / 2)
+        #expect(metrics.amount(for: withinBudgetProgress) == remaining / 2)
     }
 
 }

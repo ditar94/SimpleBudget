@@ -315,6 +315,18 @@ struct BudgetDialScalingMetrics {
     let monthlyBudget: Double
     let currentSpent: Double
 
+    private let overBudgetRange: Double = 500
+
+    private var remainingRange: Double {
+        guard monthlyBudget > 0 else { return max(remainingBudget, 0) }
+
+        if shouldCapRange {
+            return max(min(remainingBudget, monthlyBudget), 0)
+        }
+
+        return max(remainingBudget, 0)
+    }
+
     private var projectedTotal: Double { currentSpent + amount }
 
     private var shouldCapRange: Bool {
@@ -324,20 +336,41 @@ struct BudgetDialScalingMetrics {
             || projectedTotal > monthlyBudget
     }
 
-    var dialRange: Double { shouldCapRange ? 500 : max(remainingBudget, 1) }
+    var dialRange: Double { remainingRange + overBudgetRange }
 
-    var normalizedProgress: Double {
-        guard dialRange > 0 else { return 0 }
-        return max(amount / dialRange, 0)
+    func progress(for selection: Double) -> Double {
+        let selection = max(selection, 0)
+
+        guard remainingRange > 0 else {
+            return 1 + selection / overBudgetRange
+        }
+
+        if selection <= remainingRange {
+            return selection / remainingRange
+        }
+
+        return 1 + (selection - remainingRange) / overBudgetRange
     }
+
+    func amount(for progress: Double) -> Double {
+        let progress = max(progress, 0)
+
+        guard remainingRange > 0 else {
+            return max(0, (progress - 1) * overBudgetRange)
+        }
+
+        if progress <= 1 {
+            return progress * remainingRange
+        }
+
+        return remainingRange + max(0, (progress - 1) * overBudgetRange)
+    }
+
+    var normalizedProgress: Double { progress(for: amount) }
 
     var primaryTrim: Double { min(normalizedProgress, 1) }
 
-    var knobRotationProgress: Double {
-        guard normalizedProgress >= 1 else { return primaryTrim }
-        let wrapped = normalizedProgress.truncatingRemainder(dividingBy: 1)
-        return wrapped == 0 ? 1 : wrapped
-    }
+    var knobRotationProgress: Double { normalizedProgress }
 }
 
 // Interactive radial dial used to adjust the expense amount
@@ -529,7 +562,7 @@ private struct BudgetDial: View {
 
         if previousAngle == nil {
             previousAngle = angle
-            initialProgress = dialRange > 0 ? amount / dialRange : 0
+            initialProgress = scaling.normalizedProgress
         }
 
         if let previousAngle, dialRange > 0 {
@@ -541,11 +574,11 @@ private struct BudgetDial: View {
         guard dialRange > 0 else { return }
 
         let newProgress = max(0, initialProgress + progressDelta)
-        amount = max(0, newProgress * dialRange)
+        amount = scaling.amount(for: newProgress)
     }
 
     private func resetDragState() {
-        initialProgress = dialRange > 0 ? amount / dialRange : 0
+        initialProgress = scaling.normalizedProgress
         progressDelta = 0
         previousAngle = nil
     }
