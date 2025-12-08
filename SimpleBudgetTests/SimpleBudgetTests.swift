@@ -189,4 +189,21 @@ struct SimpleBudgetTests {
         #expect(metrics.amount(for: withinBudgetProgress) == remaining / 2)
     }
 
+    @Test func monthSummaryCardProgressHandlesInvalidBudgets() async throws {
+        let cases: [(spent: Double, limit: Double, expected: Double)] = [
+            (spent: 50, limit: 0, expected: 0),
+            (spent: .nan, limit: 500, expected: 0),
+            (spent: 100, limit: .nan, expected: 0),
+            (spent: .infinity, limit: 200, expected: 0),
+            (spent: 150, limit: .infinity, expected: 0),
+            (spent: 100, limit: 200, expected: 0.5),
+            (spent: 300, limit: 200, expected: 1)
+        ]
+
+        for scenario in cases {
+            let progress = MonthSummaryCard.progress(for: scenario.spent, limit: scenario.limit)
+            #expect(progress == scenario.expected)
+        }
+    }
+
 }

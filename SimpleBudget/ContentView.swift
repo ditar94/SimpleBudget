@@ -855,15 +855,22 @@ private struct MonthlyExpensesTab: View {
 }
 
 // Summary card highlighting spending progress and remaining budget
-private struct MonthSummaryCard: View {
+struct MonthSummaryCard: View {
     let month: Date
     let spent: Double
     let limit: Double
     let remaining: Double
 
     private var progress: Double {
-        guard limit > 0 else { return 0 }
+        Self.progress(for: spent, limit: limit)
+    }
+
+    static func progress(for spent: Double, limit: Double) -> Double {
+        guard limit.isFinite, spent.isFinite, limit > 0 else { return 0 }
+
         let ratio = spent / limit
+        guard ratio.isFinite else { return 0 }
+
         return min(max(ratio, 0), 1)
     }
 
