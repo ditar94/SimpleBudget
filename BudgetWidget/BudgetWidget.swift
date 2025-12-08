@@ -1,6 +1,7 @@
 import SwiftUI
 import WidgetKit
 import SwiftData
+import AppIntents
 
 // Timeline entry carrying budget details and the quick intent configuration
 struct BudgetEntry: TimelineEntry {
@@ -67,9 +68,15 @@ struct BudgetWidget: Widget {
 struct BudgetWidgetView: View {
     let entry: BudgetEntry
     @Environment(\.widgetFamily) private var family
-    @State private var pendingAmount: Double = 0
+    @State private var quickIntent: AddExpenseIntent
+
+    init(entry: BudgetEntry) {
+        self.entry = entry
+        _quickIntent = State(initialValue: entry.quickIntent)
+    }
 
     private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
+    private var pendingAmount: Double { quickIntent.amount }
     private var remainingAfterPending: Double { entry.remaining - pendingAmount }
     private var spendingProgress: Double {
         min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1)
@@ -113,11 +120,14 @@ struct BudgetWidgetView: View {
 
             adjustmentControls(font: .body)
 
-            Button(intent: entry.quickIntent) {
+            AppIntentButton(quickIntent) {
                 Label("Add expense", systemImage: "plus")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .simultaneousGesture(TapGesture().onEnded {
+                WidgetCenter.shared.reloadAllTimelines()
+            })
         }
         .padding()
     }
@@ -222,7 +232,7 @@ struct BudgetWidgetView: View {
 
     private func adjustPending(by delta: Double) {
         let updated = pendingAmount + delta
-        pendingAmount = max(0, updated)
+        quickIntent.amount = max(0, updated)
     }
 
     private var adjustmentStep: Double {
