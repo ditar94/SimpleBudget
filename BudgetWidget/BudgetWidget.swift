@@ -132,6 +132,7 @@ struct BudgetWidgetView: View {
 
             ProgressView(value: spendingProgress)
                 .tint(entry.remaining >= 0 ? Color.blue : Color.red)
+                .animation(.easeOut(duration: 0.12), value: spendingProgress)
 
             VStack(alignment: .leading, spacing: 4) {
                 valueRow(title: entry.remaining >= 0 ? "Remaining" : "Over", value: entry.remaining, emphasizeNegative: true)
@@ -154,6 +155,7 @@ struct BudgetWidgetView: View {
             }
             ProgressView(value: spendingProgress)
                 .progressViewStyle(.linear)
+                .animation(.easeOut(duration: 0.12), value: spendingProgress)
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     valueRow(title: "Remain", value: entry.remaining, emphasizeNegative: true, compact: true)
@@ -169,8 +171,15 @@ struct BudgetWidgetView: View {
     private var accessoryInlineView: some View {
         HStack(spacing: 6) {
             Text("After")
-            Text(remainingAfterPending, format: .currency(code: currencyCode))
-                .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+            if #available(iOS 17.0, *) {
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                    .contentTransition(.numericText(value: remainingAfterPending))
+                    .animation(.easeOut(duration: 0.12), value: remainingAfterPending)
+            } else {
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+            }
             adjustmentControls(font: .caption2, showCurrency: false)
         }
         .font(.caption2)
@@ -184,13 +193,22 @@ struct BudgetWidgetView: View {
                 .trim(from: 0, to: spendingProgress)
                 .stroke(entry.remaining >= 0 ? Color.blue : Color.red, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .animation(.easeOut(duration: 0.12), value: spendingProgress)
 
             VStack(spacing: 2) {
                 Text("After")
                     .font(.caption2)
-                Text(remainingAfterPending, format: .currency(code: currencyCode))
-                    .font(.system(size: 10).monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                if #available(iOS 17.0, *) {
+                    Text(remainingAfterPending, format: .currency(code: currencyCode))
+                        .font(.system(size: 10).monospacedDigit())
+                        .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                        .contentTransition(.numericText(value: remainingAfterPending))
+                        .animation(.easeOut(duration: 0.12), value: remainingAfterPending)
+                } else {
+                    Text(remainingAfterPending, format: .currency(code: currencyCode))
+                        .font(.system(size: 10).monospacedDigit())
+                        .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                }
             }
         }
         .overlay(alignment: .bottom) {
@@ -207,9 +225,17 @@ struct BudgetWidgetView: View {
                 .font(compact ? .caption2 : .caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(value, format: .currency(code: currencyCode))
-                .font(compact ? .caption.bold() : .headline.weight(.semibold))
-                .foregroundStyle(emphasizeNegative && value < 0 ? Color.red : Color.primary)
+            if #available(iOS 17.0, *) {
+                Text(value, format: .currency(code: currencyCode))
+                    .font(compact ? .caption.bold() : .headline.weight(.semibold))
+                    .foregroundStyle(emphasizeNegative && value < 0 ? Color.red : Color.primary)
+                    .contentTransition(.numericText(value: value))
+                    .animation(.easeOut(duration: 0.12), value: value)
+            } else {
+                Text(value, format: .currency(code: currencyCode))
+                    .font(compact ? .caption.bold() : .headline.weight(.semibold))
+                    .foregroundStyle(emphasizeNegative && value < 0 ? Color.red : Color.primary)
+            }
         }
     }
 
@@ -221,11 +247,25 @@ struct BudgetWidgetView: View {
             .buttonStyle(.plain)
 
             if showCurrency {
-                Text(pendingAmount, format: .currency(code: currencyCode))
-                    .font(font.monospacedDigit())
+                if #available(iOS 17.0, *) {
+                    Text(pendingAmount, format: .currency(code: currencyCode))
+                        .font(font.monospacedDigit())
+                        .contentTransition(.numericText(value: pendingAmount))
+                        .animation(.easeOut(duration: 0.12), value: pendingAmount)
+                } else {
+                    Text(pendingAmount, format: .currency(code: currencyCode))
+                        .font(font.monospacedDigit())
+                }
             } else {
-                Text(pendingAmount, format: .number.precision(.fractionLength(0)))
-                    .font(font.monospacedDigit())
+                if #available(iOS 17.0, *) {
+                    Text(pendingAmount, format: .number.precision(.fractionLength(0)))
+                        .font(font.monospacedDigit())
+                        .contentTransition(.numericText(value: pendingAmount))
+                        .animation(.easeOut(duration: 0.12), value: pendingAmount)
+                } else {
+                    Text(pendingAmount, format: .number.precision(.fractionLength(0)))
+                        .font(font.monospacedDigit())
+                }
             }
 
             Button(intent: AdjustQuickAmountIntent(delta: adjustmentStep)) {
@@ -267,6 +307,8 @@ struct BudgetWidgetView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(compact ? .small : .regular)
             .simultaneousGesture(TapGesture().onEnded {
+                // Reset the quick amount after adding an expense so selector returns to 0
+                storedAmount = 0
                 WidgetCenter.shared.reloadAllTimelines()
             })
         } else {
@@ -281,5 +323,5 @@ struct BudgetWidgetView: View {
 #Preview(as: .systemMedium) {
     BudgetWidget()
 } timeline: {
-    BudgetEntry(date: .now, remaining: 1200, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
+    BudgetEntry(date: .now, remaining: 300, monthlyBudget: 300, quickIntent: AddExpenseIntent())
 }
