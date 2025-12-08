@@ -10,4 +10,6 @@ import Foundation
 enum AppIdentifiers {
     static let appGroup = "group.WhiteSnek.SimpleBudget"
     static let cloudContainer = "iCloud.WhiteSnek.SimpleBudget"
+    /// Shared store name used by the app and the widget so they read/write the same data file.
+    static let persistentStoreName = "budget-store"
 }
