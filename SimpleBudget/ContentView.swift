@@ -498,12 +498,7 @@ private struct BudgetDial: View {
                         .highPriorityGesture(dragGesture)
 
                     VStack(spacing: 6) {
-                        Text("$ ")
-                            .font(.system(size: 30, weight: .bold))
-                            .foregroundStyle(Color.primaryBlue)
-                            + Text(amount, format: .number.precision(.fractionLength(0)))
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.primaryText)
+                        amountText
                         Button {
                             amount = 0
                         } label: {
@@ -555,6 +550,23 @@ private struct BudgetDial: View {
         .accessibilityIdentifier("BudgetDial")
         .accessibilityLabel("Budget Dial")
         .accessibilityValue("range:\(Int(dialRange.rounded()))")
+    }
+
+    private var amountText: Text {
+        let formattedAmount = amount.formatted(.number.precision(.fractionLength(0)))
+        var attributedString = AttributedString("$ \(formattedAmount)")
+
+        if let symbolRange = attributedString.range(of: "$ ") {
+            attributedString[symbolRange].font = .system(size: 30, weight: .bold)
+            attributedString[symbolRange].foregroundColor = .primaryBlue
+        }
+
+        if let amountRange = attributedString.range(of: formattedAmount) {
+            attributedString[amountRange].font = .system(size: 38, weight: .bold, design: .rounded)
+            attributedString[amountRange].foregroundColor = .primaryText
+        }
+
+        return Text(attributedString)
     }
 
     private func updateAmount(from location: CGPoint, in size: CGSize) {
