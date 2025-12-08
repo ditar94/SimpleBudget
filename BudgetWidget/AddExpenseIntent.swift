@@ -37,6 +37,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
         )
         context.insert(transaction)
         try context.save()
+        BudgetWidgetAmountStore.defaults.set(0, forKey: BudgetWidgetAmountStore.key)
         CrossProcessNotifier.signalDataChange()
         WidgetCenter.shared.reloadAllTimelines()
         return .result(value: "Saved")
