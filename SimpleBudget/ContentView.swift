@@ -851,7 +851,12 @@ private struct MonthSummaryCard: View {
 
     private var progress: Double {
         guard limit > 0 else { return 0 }
-        return min(spent / limit, 10)
+        let ratio = spent / limit
+        return min(max(ratio, 0), 1)
+    }
+
+    private var progressPercentage: Int {
+        Int(progress * 100)
     }
 
     var body: some View {
@@ -907,7 +912,7 @@ private struct MonthSummaryCard: View {
 
                     Spacer()
 
-                    Text("\(Int(progress * 100))% of limit")
+                    Text("\(progressPercentage)% of limit")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.8))
                 }
