@@ -851,7 +851,7 @@ private struct MonthSummaryCard: View {
 
     private var progress: Double {
         guard limit > 0 else { return 0 }
-        return min(spent / limit, 2)
+        return min(spent / limit, 10)
     }
 
     var body: some View {
