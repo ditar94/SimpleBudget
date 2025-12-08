@@ -94,6 +94,7 @@ private extension SimpleBudgetApp {
 
         if ProcessInfo.processInfo.arguments.contains("UITestSeedRefund") {
             let refund = Transaction(
+                title: "Refund",
                 amount: -200,
                 category: "Refund",
                 date: .now,
