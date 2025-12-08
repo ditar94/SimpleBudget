@@ -16,7 +16,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     var amount: Double
 
     @Parameter(title: "Title", default: "Quick expense")
-    var title: String
+    var expenseTitle: String
 
     @Parameter(title: "Category", default: "General")
     var category: String
@@ -29,7 +29,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
         let container = try WidgetModelContainer.shared
         let context = ModelContext(container)
         let transaction = Transaction(
-            title: title,
+            title: expenseTitle,
             amount: abs(amount),
             category: category,
             date: .now,
