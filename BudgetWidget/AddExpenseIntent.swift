@@ -50,6 +50,14 @@ struct AdjustQuickAmountIntent: AppIntent {
     @Parameter(title: "Delta", default: 0)
     var delta: Double
 
+    init(delta: Double) {
+        self.delta = delta
+    }
+
+    init() {
+        self.delta = 0
+    }
+
     func perform() async throws -> some IntentResult {
         let defaults = BudgetWidgetAmountStore.defaults
         let hasExistingAmount = defaults.object(forKey: BudgetWidgetAmountStore.key) != nil
