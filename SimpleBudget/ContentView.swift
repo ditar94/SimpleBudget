@@ -1153,7 +1153,10 @@ private struct SettingsTab: View {
                     categoriesCard
                 }
                 .padding()
+                .contentShape(Rectangle())
+                .onTapGesture { isBudgetFieldFocused = false }
             }
+            .scrollDismissesKeyboard(.immediately)
             .navigationTitle("Settings")
         }
     }
