@@ -48,11 +48,7 @@ struct AdjustQuickAmountIntent: AppIntent {
     static var description = IntentDescription("Increase or decrease the amount used by the quick add expense widget.")
 
     @Parameter(title: "Delta")
-    var delta: Double
-
-    init(delta: IntentParameter<Double>) {
-        _delta = delta
-    }
+    var delta: Double = 0
 
     func perform() async throws -> some IntentResult {
         let defaults = BudgetWidgetAmountStore.defaults
