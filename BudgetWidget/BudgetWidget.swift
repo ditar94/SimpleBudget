@@ -121,7 +121,7 @@ struct BudgetWidgetView: View {
     // MARK: - Layouts
 
     private var primaryWidgetView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Label("Budget", systemImage: "creditcard")
                     .font(.headline)
@@ -138,9 +138,7 @@ struct BudgetWidgetView: View {
                 valueRow(title: "Remaining after", value: remainingAfterPending, emphasizeNegative: true)
             }
 
-            adjustmentControls(font: .body)
-
-            quickAddControl
+            primaryActionRow
         }
         .padding()
     }
@@ -215,8 +213,8 @@ struct BudgetWidgetView: View {
         }
     }
 
-    private func adjustmentControls(font: Font, showCurrency: Bool = true) -> some View {
-        return HStack(spacing: 6) {
+    private func adjustmentControls(font: Font, weight: Font.Weight = .regular, spacing: CGFloat = 6, showCurrency: Bool = true) -> some View {
+        return HStack(spacing: spacing) {
             Button(intent: AdjustQuickAmountIntent(delta: -adjustmentStep)) {
                 Image(systemName: "minus.circle.fill")
             }
@@ -236,6 +234,7 @@ struct BudgetWidgetView: View {
             .buttonStyle(.plain)
         }
         .font(font)
+        .fontWeight(weight)
     }
 
     private var adjustmentStep: Double {
@@ -248,13 +247,25 @@ struct BudgetWidgetView: View {
     }
 
     @ViewBuilder
-    private var quickAddControl: some View {
+    private var primaryActionRow: some View {
+        HStack(spacing: 14) {
+            adjustmentControls(font: .title2, weight: .semibold, spacing: 10)
+            quickAddControl(compact: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    @ViewBuilder
+    private func quickAddControl(compact: Bool = false) -> some View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: quickIntent) {
                 Label("Add expense", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
+                    .font(compact ? .body.weight(.semibold) : nil)
+                    .labelStyle(.titleAndIcon)
+                    .frame(maxWidth: compact ? nil : .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(compact ? .small : .regular)
             .simultaneousGesture(TapGesture().onEnded {
                 WidgetCenter.shared.reloadAllTimelines()
             })
@@ -262,7 +273,7 @@ struct BudgetWidgetView: View {
             Text("Requires latest OS for quick add")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: compact ? nil : .infinity)
         }
     }
 }
