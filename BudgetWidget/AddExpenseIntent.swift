@@ -46,8 +46,8 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
 enum WidgetModelContainer {
     static var shared: ModelContainer {
         get throws {
-            let groupIdentifier = "group.com.example.SimpleBudget"
-            let cloudKitIdentifier = "iCloud.com.example.SimpleBudget"
+            let groupIdentifier = "group.WhiteSnek.SimpleBudget"
+            let cloudKitIdentifier = "iCloud.WhiteSnek.SimpleBudget"
             let schema = Schema([
                 Transaction.self,
                 BudgetSettings.self,
