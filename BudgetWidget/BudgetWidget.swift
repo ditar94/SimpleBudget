@@ -217,7 +217,7 @@ struct BudgetWidgetView: View {
 
     private func adjustmentControls(font: Font, showCurrency: Bool = true) -> some View {
         return HStack(spacing: 6) {
-            Button(intent: AdjustQuickAmountIntent(delta: -adjustmentStep)) {
+            Button(intent: AdjustQuickAmountIntent(delta: IntentParameter(value: -adjustmentStep))) {
                 Image(systemName: "minus.circle.fill")
             }
             .buttonStyle(.plain)
@@ -230,7 +230,7 @@ struct BudgetWidgetView: View {
                     .font(font.monospacedDigit())
             }
 
-            Button(intent: AdjustQuickAmountIntent(delta: adjustmentStep)) {
+            Button(intent: AdjustQuickAmountIntent(delta: IntentParameter(value: adjustmentStep))) {
                 Image(systemName: "plus.circle.fill")
             }
             .buttonStyle(.plain)
