@@ -1126,6 +1126,7 @@ private struct SettingsTab: View {
 
     @State private var newCategory = ""
     @State private var budgetText: String = ""
+    @FocusState private var isBudgetFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -1166,6 +1167,7 @@ private struct SettingsTab: View {
                     get: { budgetText.isEmpty ? settings.monthlyBudget.formatted(.number) : budgetText },
                     set: { budgetText = $0 }
                 ))
+                .focused($isBudgetFieldFocused)
                 .keyboardType(.decimalPad)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 12)
@@ -1176,6 +1178,14 @@ private struct SettingsTab: View {
                 .onChange(of: budgetText) { value in
                     let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.monthlyBudget
                     onUpdateBudget(parsed)
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isBudgetFieldFocused = false
+                        }
+                    }
                 }
             }
         }
