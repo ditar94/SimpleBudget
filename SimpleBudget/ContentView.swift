@@ -99,6 +99,7 @@ struct ContentView: View {
         )
 
         modelContext.insert(transaction)
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Removes a transaction when confirmed by the user
@@ -106,6 +107,8 @@ struct ContentView: View {
         withAnimation {
             modelContext.delete(transaction)
         }
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Adds a new budget category while ensuring uniqueness
@@ -120,6 +123,8 @@ struct ContentView: View {
         var updated = settings.categories ?? []
         updated.append(category)
         settings.categories = updated
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Deletes a category and cleans up its association with settings
@@ -129,11 +134,15 @@ struct ContentView: View {
             settings.categories = current
         }
         modelContext.delete(category)
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 
     // Updates the monthly budget while preventing negative values
     private func updateBudget(_ newValue: Double) {
         settings.monthlyBudget = max(0, newValue)
+
+        WidgetRefreshHelper.reloadAllTimelines()
     }
 }
 
