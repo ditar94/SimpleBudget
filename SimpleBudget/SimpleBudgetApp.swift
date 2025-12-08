@@ -17,11 +17,7 @@ struct SimpleBudgetApp: App {
     private static let isUITesting = ProcessInfo.processInfo.arguments.contains("UI-Testing")
 
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Transaction.self,
-            BudgetSettings.self,
-            BudgetCategory.self
-        ])
+        let schema = BudgetModelSchema.schema
         let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
         let primaryConfiguration: ModelConfiguration = {
             if isUITesting {
