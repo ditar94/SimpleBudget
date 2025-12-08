@@ -9,7 +9,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     static var description = IntentDescription("Add an expense from your lock screen or Home Screen widget.")
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Add \\(\\.$amount) in \\(\\.$category)")
+        Summary("Add \(\.$amount) in \(\.$category)")
     }
 
     @Parameter(title: "Amount", default: 20)
