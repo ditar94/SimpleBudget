@@ -1169,6 +1169,7 @@ private struct SettingsTab: View {
                 ))
                 .focused($isBudgetFieldFocused)
                 .keyboardType(.decimalPad)
+                .submitLabel(.done)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 12)
                 .background(
@@ -1178,6 +1179,9 @@ private struct SettingsTab: View {
                 .onChange(of: budgetText) { value in
                     let parsed = Double(value.replacingOccurrences(of: ",", with: ".")) ?? settings.monthlyBudget
                     onUpdateBudget(parsed)
+                }
+                .onSubmit {
+                    isBudgetFieldFocused = false
                 }
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
