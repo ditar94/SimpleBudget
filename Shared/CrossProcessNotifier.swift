@@ -3,7 +3,7 @@ import Foundation
 /// Cross-process signaling helpers used by the app and its extensions to notify
 /// each other when the shared SwiftData store has been modified.
 enum CrossProcessNotifier {
-    static let darwinNotificationName: CFString = "com.whitesnek.simplebudget.datastore.changed" as CFString
+    static let darwinNotificationName = CFNotificationName("com.whitesnek.simplebudget.datastore.changed" as CFString)
     static let versionDefaultsKey = "datastore_change_version"
 
     static var sharedDefaults: UserDefaults {
@@ -17,7 +17,7 @@ enum CrossProcessNotifier {
         sharedDefaults.synchronize()
 
         let center = CFNotificationCenterGetDarwinNotifyCenter()
-        CFNotificationCenterPostNotification(center, CFNotificationName(darwinNotificationName), nil, nil, true)
+        CFNotificationCenterPostNotification(center, darwinNotificationName, nil, nil, true)
     }
 
     /// Reads the last published change token from the shared defaults.
@@ -29,11 +29,11 @@ enum CrossProcessNotifier {
 /// Lightweight wrapper around Darwin notification observers so we can attach
 /// Swift closures to cross-process notifications.
 final class DarwinNotificationObserver {
-    private let name: CFString
+    private let name: CFNotificationName
     private let handler: @MainActor () -> Void
     private var isObserving = false
 
-    init(name: CFString, handler: @escaping @MainActor () -> Void) {
+    init(name: CFNotificationName, handler: @escaping @MainActor () -> Void) {
         self.name = name
         self.handler = handler
     }
