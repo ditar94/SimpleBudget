@@ -36,8 +36,7 @@ struct ContentView: View {
     }
 
     private var categories: [String] {
-        let names = categoryModels.map(\.name)
-        return names.isEmpty ? BudgetSettings.defaultCategories : names
+        ContentView.sanitizedCategories(for: settings, from: categoryModels)
     }
 
     // Tab identifiers for the main application sections
@@ -135,6 +134,26 @@ struct ContentView: View {
     // Updates the monthly budget while preventing negative values
     private func updateBudget(_ newValue: Double) {
         settings.monthlyBudget = max(0, newValue)
+    }
+}
+
+extension ContentView {
+    static func sanitizedCategories(for settings: BudgetSettings, from categoryModels: [BudgetCategory]) -> [String] {
+        let names = categoryModels
+            .filter { $0.settings === settings }
+            .map(\.name)
+
+        var seen = Set<String>()
+        var unique: [String] = []
+
+        for name in names {
+            let key = name.lowercased()
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+            unique.append(name)
+        }
+
+        return unique.isEmpty ? BudgetSettings.defaultCategories : unique
     }
 }
 
