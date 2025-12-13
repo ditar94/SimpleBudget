@@ -5,6 +5,7 @@ import SwiftUI
 /// Loads the shared `ModelContainer` on a background task and exposes it for injection
 /// once ready. Keeps the configuration consistent with the rest of the app while
 /// providing a fallback path when entitlements or CloudKit are unavailable.
+@MainActor
 final class ModelContainerLoader: ObservableObject {
     @Published private(set) var container: ModelContainer?
 
