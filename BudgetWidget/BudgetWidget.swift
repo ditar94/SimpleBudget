@@ -44,7 +44,6 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
 
         let remaining = settings.monthlyBudget - currentMonthTotal
         let now = Date()
-        let refreshDate = now.addingTimeInterval(90)
         let currentEntry = BudgetEntry(
             date: now,
             remaining: remaining,
@@ -52,14 +51,9 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
             quickIntent: configuration
         )
 
-        let refreshEntry = BudgetEntry(
-            date: refreshDate,
-            remaining: remaining,
-            monthlyBudget: settings.monthlyBudget,
-            quickIntent: configuration
-        )
-
-        return Timeline(entries: [currentEntry, refreshEntry], policy: .atEnd)
+        // Use a short-lived timeline so widget reloads pick up recent expenses quickly
+        let refreshDate = now.addingTimeInterval(30)
+        return Timeline(entries: [currentEntry], policy: .after(refreshDate))
     }
 }
 
