@@ -284,9 +284,9 @@ struct BudgetWidgetView: View {
 
     @ViewBuilder
     private func adjustmentButton(delta: Double) -> some View {
-        let label = Text(delta, format: .currency(code: currencyCode))
+        let label = Text(formattedDeltaLabel(for: delta))
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.primary)
+            .foregroundStyle(.white)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
             .frame(maxWidth: .infinity)
@@ -297,8 +297,7 @@ struct BudgetWidgetView: View {
                 label
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color.secondary.opacity(0.25))
-            .foregroundStyle(.primary)
+            .tint(adjustmentTint(for: delta))
             .frame(height: 40)
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .simultaneousGesture(TapGesture().onEnded {
@@ -311,11 +310,27 @@ struct BudgetWidgetView: View {
                 label
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color.secondary.opacity(0.25))
-            .foregroundStyle(.primary)
+            .tint(adjustmentTint(for: delta))
             .frame(height: 40)
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
+    }
+
+    private func formattedDeltaLabel(for delta: Double) -> String {
+        let absolute = abs(delta)
+        let sign = delta < 0 ? "-" : ""
+
+        if absolute < 1 {
+            let cents = Int((absolute * 100).rounded())
+            return "\(sign)\(cents)¢"
+        }
+
+        let wholeDollars = Int(absolute.rounded())
+        return "\(sign)$\(wholeDollars)"
+    }
+
+    private func adjustmentTint(for delta: Double) -> Color {
+        delta < 0 ? .red : .blue
     }
 
     @ViewBuilder
