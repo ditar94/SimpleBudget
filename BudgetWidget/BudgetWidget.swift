@@ -336,21 +336,30 @@ struct BudgetWidgetView: View {
     @ViewBuilder
     private var addButton: some View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
-            Button(intent: quickIntent) {
-                Text("ADD \(pendingAmount, format: .currency(code: currencyCode))")
-                    .font(.callout.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 6)
+            VStack(spacing: 10) {
+                Button(intent: quickIntent) {
+                    Text("+")
+                        .font(.system(size: 32, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                }
+                .buttonStyle(.borderedProminent)
+                .frame(height: 80)
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                Button(action: {
+                    storedAmount = 0
+                    WidgetCenter.shared.reloadAllTimelines()
+                }) {
+                    Text("Clear")
+                        .font(.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.bordered)
+                .frame(height: 34)
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
-            .buttonStyle(.borderedProminent)
-            .frame(height: 64)
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .simultaneousGesture(TapGesture().onEnded {
-                storedAmount = 0
-                WidgetCenter.shared.reloadAllTimelines()
-            })
         } else {
             Text("Requires latest OS for quick add")
                 .font(.caption)
