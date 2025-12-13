@@ -167,8 +167,14 @@ struct BudgetWidgetView: View {
             }
         }
 
-        // Determine the background color based on the widget family.
-        let backgroundColor = family == .systemSmall ? remainingBackground : Color.clear
+        // Determine the background styling based on the widget family.
+        let backgroundColor: AnyView = {
+            if family == .systemSmall {
+                return AnyView(remainingBackground)
+            } else {
+                return AnyView(Color.clear)
+            }
+        }()
 
         // Apply the appropriate background modifier based on the OS version.
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
@@ -195,7 +201,7 @@ struct BudgetWidgetView: View {
                 Text(entry.remaining, format: .currency(code: currencyCode))
                     .font(.title2.monospacedDigit().weight(.bold))
             }
-            .foregroundStyle(Color.white)
+            .foregroundStyle(remainingForeground)
             .multilineTextAlignment(.center)
             .padding()
         }
@@ -681,9 +687,42 @@ struct BudgetWidgetView: View {
         }
     }
 
-    /// The background color for the widget, which changes based on whether the budget is positive or overspent.
-    private var remainingBackground: Color {
+    /// The tinted card background for the widget, which changes based on whether the budget is positive or overspent.
+    private var remainingBackground: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(remainingGradient)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+                    .blendMode(.softLight)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(remainingStroke, lineWidth: 1)
+            )
+    }
+
+    private var remainingGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                remainingTint.opacity(0.28),
+                remainingTint.opacity(0.14)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var remainingStroke: Color {
+        Color.white.opacity(0.22)
+    }
+
+    private var remainingTint: Color {
         entry.remaining >= 0 ? Color.green : Color.red
+    }
+
+    private var remainingForeground: Color {
+        Color.white.opacity(0.92)
     }
     
     /// The primary action row for the default widget layout, containing adjustment and add controls.
