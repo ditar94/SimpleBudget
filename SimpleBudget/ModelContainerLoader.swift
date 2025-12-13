@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import Combine
 
 /// Loads the shared `ModelContainer` on a background task and exposes it for injection
 /// once ready. Keeps the configuration consistent with the rest of the app while
