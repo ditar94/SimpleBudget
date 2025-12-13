@@ -102,23 +102,43 @@ struct BudgetWidgetView: View {
                 accessoryCircularView
             case .accessoryRectangular:
                 accessoryRectangularView
+            case .systemSmall:
+                systemSmallView
             default:
                 primaryWidgetView
             }
         }
 
+        let backgroundColor = family == .systemSmall ? remainingBackground : Color.clear
+
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             content
                 .containerBackground(for: .widget) {
-                    Color.clear
+                    backgroundColor
                 }
         } else {
             content
-                .background(Color.clear)
+                .background(backgroundColor)
         }
     }
 
     // MARK: - Layouts
+
+    private var systemSmallView: some View {
+        ZStack {
+            remainingBackground
+
+            VStack(spacing: 8) {
+                Text("Remaining Budget:")
+                    .font(.caption.weight(.semibold))
+                Text(entry.remaining, format: .currency(code: currencyCode))
+                    .font(.title3.monospacedDigit().weight(.bold))
+            }
+            .foregroundStyle(Color.white)
+            .multilineTextAlignment(.center)
+            .padding()
+        }
+    }
 
     private var primaryWidgetView: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -284,6 +304,10 @@ struct BudgetWidgetView: View {
         default:
             return 1
         }
+    }
+
+    private var remainingBackground: Color {
+        entry.remaining >= 0 ? Color.green : Color.red
     }
 
     @ViewBuilder
