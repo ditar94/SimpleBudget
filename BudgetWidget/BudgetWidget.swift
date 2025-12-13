@@ -43,14 +43,23 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
         }
 
         let remaining = settings.monthlyBudget - currentMonthTotal
-        let entry = BudgetEntry(
-            date: .now,
+        let now = Date()
+        let refreshDate = now.addingTimeInterval(90)
+        let currentEntry = BudgetEntry(
+            date: now,
             remaining: remaining,
             monthlyBudget: settings.monthlyBudget,
             quickIntent: configuration
         )
 
-        return Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60)))
+        let refreshEntry = BudgetEntry(
+            date: refreshDate,
+            remaining: remaining,
+            monthlyBudget: settings.monthlyBudget,
+            quickIntent: configuration
+        )
+
+        return Timeline(entries: [currentEntry, refreshEntry], policy: .atEnd)
     }
 }
 
@@ -93,6 +102,11 @@ struct BudgetWidgetView: View {
         let intent = entry.quickIntent
         intent.amount = pendingAmount
         return intent
+    }
+
+    private func adjustStoredAmount(by delta: Double) {
+        storedAmount = max(0, storedAmount + delta)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // Compact UI summarizing remaining budget and launching quick add intent
@@ -152,16 +166,21 @@ struct BudgetWidgetView: View {
             remainingRow
             controlGrid
         }
-        .padding()
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.secondary.opacity(0.14))
+        )
+        .padding(8)
     }
 
     private var headerRow: some View {
         HStack {
             Text("Monthly Budget")
-                .font(.subheadline.weight(.semibold))
+                .font(.callout.weight(.semibold))
             Spacer()
             Text(entry.monthlyBudget, format: .currency(code: currencyCode))
-                .font(.callout.monospacedDigit())
+                .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
     }
@@ -244,7 +263,7 @@ struct BudgetWidgetView: View {
     }
 
     private var controlGrid: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: 14) {
             adjustmentGrid(deltas: [-20, -10, -5, -1, -0.25, -0.05])
                 .frame(maxWidth: .infinity)
             addButton
@@ -255,7 +274,7 @@ struct BudgetWidgetView: View {
     }
 
     private func adjustmentGrid(deltas: [Double]) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             adjustmentRow(deltas: Array(deltas.prefix(3)))
             adjustmentRow(deltas: Array(deltas.suffix(3)))
         }
@@ -271,35 +290,37 @@ struct BudgetWidgetView: View {
 
     @ViewBuilder
     private func adjustmentButton(delta: Double) -> some View {
+        let label = Text(delta, format: .currency(code: currencyCode))
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: AdjustQuickAmountIntent(delta: delta)) {
-                Text(delta, format: .currency(code: currencyCode))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity)
+                label
             }
-            .buttonStyle(.bordered)
-            .tint(.primary)
+            .buttonStyle(.borderedProminent)
+            .tint(Color.secondary.opacity(0.25))
+            .foregroundStyle(.primary)
+            .frame(height: 40)
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .simultaneousGesture(TapGesture().onEnded {
-                storedAmount = max(0, storedAmount + delta)
-                WidgetCenter.shared.reloadAllTimelines()
+                adjustStoredAmount(by: delta)
             })
         } else {
             Button(action: {
-                storedAmount = max(0, storedAmount + delta)
-                WidgetCenter.shared.reloadAllTimelines()
+                adjustStoredAmount(by: delta)
             }) {
-                Text(delta, format: .currency(code: currencyCode))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity)
+                label
             }
-            .buttonStyle(.bordered)
-            .tint(.primary)
+            .buttonStyle(.borderedProminent)
+            .tint(Color.secondary.opacity(0.25))
+            .foregroundStyle(.primary)
+            .frame(height: 40)
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 
@@ -308,12 +329,15 @@ struct BudgetWidgetView: View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: quickIntent) {
                 Text("ADD \(pendingAmount, format: .currency(code: currencyCode))")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.callout.weight(.semibold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
                     .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 6)
             }
             .buttonStyle(.borderedProminent)
+            .frame(height: 64)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .simultaneousGesture(TapGesture().onEnded {
                 storedAmount = 0
                 WidgetCenter.shared.reloadAllTimelines()
