@@ -30,7 +30,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
             return .result(dialog: IntentDialog("Amount must be greater than zero."))
         }
 
-        let container = try await WidgetModelContainer.shared
+        let container = WidgetModelContainer.shared
         let context = ModelContext(container)
         let transaction = Transaction(
             title: expenseTitle,
@@ -108,45 +108,47 @@ struct ClearQuickAmountIntent: AppIntent {
 
 // Factory for a SwiftData container that can be shared with the widget extension
 enum WidgetModelContainer {
-    static var shared: ModelContainer {
-        get throws {
-            let groupIdentifier = AppIdentifiers.appGroup
-            let cloudKitIdentifier = AppIdentifiers.cloudContainer
-            let storeName = AppIdentifiers.persistentStoreName
-            let schema = BudgetModelSchema.schema
-            let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
-            let primaryConfiguration: ModelConfiguration = {
-                if supportsAppGroup {
-                    return ModelConfiguration(
-                        storeName,
-                        schema: schema,
-                        isStoredInMemoryOnly: false,
-                        allowsSave: true,
-                        groupContainer: .identifier(groupIdentifier),
-                        cloudKitDatabase: .private(cloudKitIdentifier)
-                    )
-                } else {
-                    return ModelConfiguration(
-                        storeName,
-                        schema: schema,
-                        isStoredInMemoryOnly: false,
-                        allowsSave: true,
-                        cloudKitDatabase: .private(cloudKitIdentifier)
-                    )
-                }
-            }()
-
-            do {
-                return try ModelContainer(for: schema, configurations: [primaryConfiguration])
-            } catch {
-                let fallbackConfiguration = ModelConfiguration(
+    static let shared: ModelContainer = {
+        let groupIdentifier = AppIdentifiers.appGroup
+        let cloudKitIdentifier = AppIdentifiers.cloudContainer
+        let storeName = AppIdentifiers.persistentStoreName
+        let schema = BudgetModelSchema.schema
+        let supportsAppGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
+        let primaryConfiguration: ModelConfiguration = {
+            if supportsAppGroup {
+                return ModelConfiguration(
                     storeName,
                     schema: schema,
                     isStoredInMemoryOnly: false,
-                    allowsSave: true
+                    allowsSave: true,
+                    groupContainer: .identifier(groupIdentifier),
+                    cloudKitDatabase: .private(cloudKitIdentifier)
                 )
+            } else {
+                return ModelConfiguration(
+                    storeName,
+                    schema: schema,
+                    isStoredInMemoryOnly: false,
+                    allowsSave: true,
+                    cloudKitDatabase: .private(cloudKitIdentifier)
+                )
+            }
+        }()
+
+        do {
+            return try ModelContainer(for: schema, configurations: [primaryConfiguration])
+        } catch {
+            let fallbackConfiguration = ModelConfiguration(
+                storeName,
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true
+            )
+            do {
                 return try ModelContainer(for: schema, configurations: [fallbackConfiguration])
+            } catch {
+                fatalError("Failed to initialize ModelContainer: \(error)")
             }
         }
-    }
+    }()
 }
