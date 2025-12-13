@@ -79,12 +79,6 @@ struct AdjustQuickAmountIntent: AppIntent {
     }
 }
 
-enum BudgetWidgetAmountStore {
-    static let key = "budget_widget_quick_amount"
-    static let defaultAmount: Double = 1
-    static let defaults: UserDefaults = AppGroupContainer.sharedDefaults
-}
-
 // Factory for a SwiftData container that can be shared with the widget extension
 enum WidgetModelContainer {
     static var shared: ModelContainer {

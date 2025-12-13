@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 // Shared color palette for consistent styling across views
 private extension Color {
@@ -161,7 +162,9 @@ struct ContentView: View {
         )
 
         modelContext.insert(transaction)
-        WidgetRefreshHelper.reloadAllTimelines()
+        BudgetWidgetAmountStore.defaults.set(0, forKey: BudgetWidgetAmountStore.key)
+        CrossProcessNotifier.signalDataChange()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // Removes a transaction when confirmed by the user
