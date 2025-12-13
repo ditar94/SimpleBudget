@@ -40,14 +40,14 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
     /// This function fetches the current budget settings and transactions from SwiftData to calculate the remaining budget.
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<BudgetEntry> {
         // Access the shared SwiftData container.
-        let container = try? WidgetModelContainer.shared
-        let modelContext = container.map(ModelContext.init)
+        let container = WidgetModelContainer.shared
+        let modelContext = ModelContext(container)
 
         let currentMonthTotal: Double
         let settings: BudgetSettings
 
         // Fetch settings and calculate total expenses for the current month.
-        if let modelContext, let fetchedSettings = try? modelContext.fetch(FetchDescriptor<BudgetSettings>()).first {
+        if let fetchedSettings = try? modelContext.fetch(FetchDescriptor<BudgetSettings>()).first {
             settings = fetchedSettings
             let transactions = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
             currentMonthTotal = transactions
