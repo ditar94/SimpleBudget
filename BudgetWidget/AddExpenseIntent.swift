@@ -30,7 +30,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
             return .result(dialog: IntentDialog("Amount must be greater than zero."))
         }
 
-        let container = try WidgetModelContainer.shared
+        let container = try await WidgetModelContainer.shared
         let context = ModelContext(container)
         let transaction = Transaction(
             title: expenseTitle,
@@ -41,8 +41,10 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
         )
         context.insert(transaction)
         try context.save()
-        BudgetWidgetAmountStore.defaults.set(0, forKey: BudgetWidgetAmountStore.key)
-        CrossProcessNotifier.signalDataChange()
+        await MainActor.run {
+            BudgetWidgetAmountStore.defaults.set(0, forKey: BudgetWidgetAmountStore.key)
+        }
+        await CrossProcessNotifier.signalDataChange()
         WidgetCenter.shared.reloadAllTimelines()
         return .result(dialog: IntentDialog("Saved"))
     }
@@ -65,19 +67,44 @@ struct AdjustQuickAmountIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        let defaults = BudgetWidgetAmountStore.defaults
-        let hasExistingAmount = defaults.object(forKey: BudgetWidgetAmountStore.key) != nil
-        let current = hasExistingAmount
-            ? defaults.double(forKey: BudgetWidgetAmountStore.key)
-            : BudgetWidgetAmountStore.defaultAmount
-        let updated = max(0, current + delta)
-        defaults.set(updated, forKey: BudgetWidgetAmountStore.key)
+        let updated = await MainActor.run {
+            let defaults = BudgetWidgetAmountStore.defaults
+            let hasExistingAmount = defaults.object(forKey: BudgetWidgetAmountStore.key) != nil
+            let current = hasExistingAmount
+                ? defaults.double(forKey: BudgetWidgetAmountStore.key)
+                : BudgetWidgetAmountStore.defaultAmount
+            let updated = max(0, current + delta)
+            defaults.set(updated, forKey: BudgetWidgetAmountStore.key)
+            return updated
+        }
 
-        CrossProcessNotifier.signalDataChange()
+        await CrossProcessNotifier.signalDataChange()
         WidgetCenter.shared.reloadAllTimelines()
         return .result(value: updated)
     }
 }
+
+// Intent used by widget controls to clear the quick add amount
+struct ClearQuickAmountIntent: AppIntent {
+    static var title: LocalizedStringResource = "Clear Quick Amount"
+    static var description = IntentDescription("Resets the quick add expense amount to zero.")
+
+    init() { }
+
+    func perform() async throws -> some IntentResult {
+        // Set the stored amount to 0 in UserDefaults.
+        await MainActor.run {
+            BudgetWidgetAmountStore.defaults.set(0.0, forKey: BudgetWidgetAmountStore.key)
+        }
+
+        // Notify the main app and reload widgets.
+        await CrossProcessNotifier.signalDataChange()
+        WidgetCenter.shared.reloadAllTimelines()
+        
+        return .result()
+    }
+}
+
 
 // Factory for a SwiftData container that can be shared with the widget extension
 enum WidgetModelContainer {

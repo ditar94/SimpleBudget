@@ -155,6 +155,7 @@ struct ContentView: View {
         guard draft.isValid else { return }
 
         let transaction = Transaction(
+            title: draft.title,
             amount: draft.amount,
             category: draft.category,
             date: draft.date,
@@ -162,6 +163,13 @@ struct ContentView: View {
         )
 
         modelContext.insert(transaction)
+        do {
+            try modelContext.save()
+        } catch {
+            // Consider showing an alert to the user if saving fails.
+            print("Failed to save transaction: \(error)")
+        }
+
         BudgetWidgetAmountStore.defaults.set(0, forKey: BudgetWidgetAmountStore.key)
         CrossProcessNotifier.signalDataChange()
         WidgetCenter.shared.reloadAllTimelines()
@@ -171,6 +179,7 @@ struct ContentView: View {
     private func deleteTransaction(_ transaction: Transaction) {
         withAnimation {
             modelContext.delete(transaction)
+            try? modelContext.save()
         }
 
         WidgetRefreshHelper.reloadAllTimelines()
@@ -188,6 +197,7 @@ struct ContentView: View {
         var updated = settings.categories ?? []
         updated.append(category)
         settings.categories = updated
+        try? modelContext.save()
 
         WidgetRefreshHelper.reloadAllTimelines()
     }
@@ -199,6 +209,7 @@ struct ContentView: View {
             settings.categories = current
         }
         modelContext.delete(category)
+        try? modelContext.save()
 
         WidgetRefreshHelper.reloadAllTimelines()
     }
@@ -206,6 +217,7 @@ struct ContentView: View {
     // Updates the monthly budget while preventing negative values
     private func updateBudget(_ newValue: Double) {
         settings.monthlyBudget = max(0, newValue)
+        try? modelContext.save()
 
         WidgetRefreshHelper.reloadAllTimelines()
     }
@@ -1455,4 +1467,3 @@ private struct TransactionRow: View {
     ContentView()
         .modelContainer(for: [Transaction.self, BudgetSettings.self, BudgetCategory.self], inMemory: true)
 }
-

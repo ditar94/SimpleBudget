@@ -3,34 +3,50 @@ import WidgetKit
 import SwiftData
 import AppIntents
 
-// Timeline entry carrying budget details and the quick intent configuration
+// MARK: - Widget Data Structures
+
+/// Defines the data for a single point in the widget's timeline.
+/// It includes the current budget status and the configured App Intent for adding an expense.
 struct BudgetEntry: TimelineEntry {
+    /// The date and time for this timeline entry.
     let date: Date
+    /// The remaining budget amount for the current month.
     let remaining: Double
+    /// The total monthly budget configured by the user.
     let monthlyBudget: Double
+    /// The pre-configured intent for adding a new expense, used by interactive buttons.
     let quickIntent: AddExpenseIntent
 }
 
-// Provider building the widget timeline from shared SwiftData storage
+// MARK: - Widget Timeline Logic
+
+/// Manages the widget's timeline, providing data to the widget view at different points in time.
+/// It fetches budget data from the shared SwiftData container to build timeline entries.
 struct BudgetWidgetProvider: AppIntentTimelineProvider {
     typealias Entry = BudgetEntry
     typealias Intent = AddExpenseIntent
 
+    /// Provides a generic, placeholder view for the widget, used in contexts like the widget gallery.
     func placeholder(in context: Context) -> BudgetEntry {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
     }
 
+    /// Provides a snapshot of the widget's current state for transient displays.
     func snapshot(for configuration: Intent, in context: Context) async -> BudgetEntry {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: configuration)
     }
 
+    /// Creates a timeline of entries, determining when the widget should be updated.
+    /// This function fetches the current budget settings and transactions from SwiftData to calculate the remaining budget.
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<BudgetEntry> {
+        // Access the shared SwiftData container.
         let container = try? WidgetModelContainer.shared
         let modelContext = container.map(ModelContext.init)
 
         let currentMonthTotal: Double
         let settings: BudgetSettings
 
+        // Fetch settings and calculate total expenses for the current month.
         if let modelContext, let fetchedSettings = try? modelContext.fetch(FetchDescriptor<BudgetSettings>()).first {
             settings = fetchedSettings
             let transactions = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
@@ -38,10 +54,12 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
                 .filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
                 .reduce(0) { $0 + $1.amount }
         } else {
+            // Use default values if no data is available.
             settings = BudgetSettings()
             currentMonthTotal = 0
         }
 
+        // Calculate the remaining budget.
         let remaining = settings.monthlyBudget - currentMonthTotal
         let now = Date()
         let currentEntry = BudgetEntry(
@@ -51,16 +69,20 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
             quickIntent: configuration
         )
 
-        // Use a short-lived timeline so widget reloads pick up recent expenses quickly
+        // Create a short-lived timeline to ensure the widget updates frequently to reflect new expenses.
         let refreshDate = now.addingTimeInterval(30)
         return Timeline(entries: [currentEntry], policy: .after(refreshDate))
     }
 }
 
+// MARK: - Widget Definition
+
+/// The main definition of the budget widget.
+/// It specifies the widget's kind, configuration, display name, description, and supported families.
 struct BudgetWidget: Widget {
     let kind: String = "BudgetWidget"
 
-    // Main widget configuration supporting multiple families
+    /// Configures the widget, linking it to the App Intent and timeline provider.
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AddExpenseIntent.self, provider: BudgetWidgetProvider()) { entry in
             BudgetWidgetView(entry: entry)
@@ -71,10 +93,18 @@ struct BudgetWidget: Widget {
     }
 }
 
+// MARK: - Main Widget View
+
+/// The primary SwiftUI view that renders the widget's content based on the provided entry and widget family.
 struct BudgetWidgetView: View {
+    // MARK: - State and Environment
+    
+    /// The timeline entry containing the data to display.
     let entry: BudgetEntry
+    /// The size and style of the widget (e.g., .systemSmall, .accessoryCircular), provided by the environment.
     @Environment(\.widgetFamily) private var family
 
+    /// The pending expense amount, stored in UserDefaults to persist between widget updates.
     @AppStorage(BudgetWidgetAmountStore.key, store: BudgetWidgetAmountStore.defaults)
     private var storedAmount: Double = BudgetWidgetAmountStore.defaultAmount
 
@@ -82,28 +112,43 @@ struct BudgetWidgetView: View {
         self.entry = entry
     }
 
+    // MARK: - Calculated Properties
+
+    /// The user's local currency code (e.g., "USD").
     private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
+    /// The currently selected amount for a new expense, read from AppStorage.
     private var pendingAmount: Double { storedAmount }
+    /// The total amount of expenses already recorded for the current month.
     private var committedSpend: Double { max(entry.monthlyBudget - entry.remaining, 0) }
+    /// The projected total spend if the pending amount were added as an expense.
     private var totalAfterPending: Double { committedSpend + pendingAmount }
+    /// The amount by which the user will be over budget if the pending amount is added. Returns 0 if not over budget.
     private var overBudgetAmount: Double { max(0, totalAfterPending - entry.monthlyBudget) }
+    /// The projected remaining budget after subtracting the pending amount.
     private var remainingAfterPending: Double { entry.remaining - pendingAmount }
+    /// The spending progress as a fraction (0.0 to 1.0), used for progress bars.
     private var spendingProgress: Double {
         min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1)
     }
+    
+    // MARK: - Intents and Actions
 
+    /// Configures the `AddExpenseIntent` with the current pending amount, making it ready for execution.
     private var quickIntent: AddExpenseIntent {
         let intent = entry.quickIntent
         intent.amount = pendingAmount
         return intent
     }
 
+    /// Modifies the stored pending amount by a given delta and reloads widget timelines to reflect the change.
     private func adjustStoredAmount(by delta: Double) {
         storedAmount = max(0, storedAmount + delta)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    // Compact UI summarizing remaining budget and launching quick add intent
+    // MARK: - Main View Body
+
+    /// The main view body, which switches between different layouts based on the widget family.
     var body: some View {
         let content = Group {
             switch family {
@@ -122,8 +167,10 @@ struct BudgetWidgetView: View {
             }
         }
 
+        // Determine the background color based on the widget family.
         let backgroundColor = family == .systemSmall ? remainingBackground : Color.clear
 
+        // Apply the appropriate background modifier based on the OS version.
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             content
                 .containerBackground(for: .widget) {
@@ -135,17 +182,18 @@ struct BudgetWidgetView: View {
         }
     }
 
-    // MARK: - Layouts
+    // MARK: - Widget Family Layouts
 
+    /// A compact view for the small system-sized widget, showing the remaining budget.
     private var systemSmallView: some View {
         ZStack {
             remainingBackground
 
-            VStack(spacing: 8) {
+            VStack(spacing: 4) {
                 Text("Remaining Budget:")
-                    .font(.caption.weight(.semibold))
+                    .font(.caption)
                 Text(entry.remaining, format: .currency(code: currencyCode))
-                    .font(.title3.monospacedDigit().weight(.bold))
+                    .font(.title2.monospacedDigit().weight(.bold))
             }
             .foregroundStyle(Color.white)
             .multilineTextAlignment(.center)
@@ -153,250 +201,19 @@ struct BudgetWidgetView: View {
         }
     }
 
+    /// A detailed, interactive view for the medium system-sized widget.
     private var systemMediumView: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 3) {
             headerRow
             budgetProgressSection
             remainingRow
             controlGrid
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.secondary.opacity(0.14))
-        )
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
+        .background(Color.secondary.opacity(0.14))
     }
-
-    private var headerRow: some View {
-        HStack {
-            Text("Monthly Budget")
-                .font(.callout.weight(.semibold))
-            Spacer()
-            Text(entry.monthlyBudget, format: .currency(code: currencyCode))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var budgetProgressSection: some View {
-        let budget = max(entry.monthlyBudget, 1)
-        let committedRatio = min(committedSpend / budget, 1)
-        let totalRatio = min(totalAfterPending / budget, 1)
-        let pendingRatio = max(0, totalRatio - committedRatio)
-        let isOverBudget = totalAfterPending > entry.monthlyBudget
-
-        return VStack(alignment: .leading, spacing: 6) {
-            GeometryReader { proxy in
-                let availableWidth = proxy.size.width
-
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.secondary.opacity(0.2))
-
-                    if isOverBudget {
-                        Capsule()
-                            .fill(Color.red)
-                            .frame(width: availableWidth)
-                    } else {
-                        if committedRatio > 0 {
-                            Capsule()
-                                .fill(Color.green)
-                                .frame(width: availableWidth * committedRatio)
-                        }
-
-                        if pendingRatio > 0 {
-                            Capsule()
-                                .fill(Color.green.opacity(0.45))
-                                .frame(width: availableWidth * pendingRatio)
-                                .offset(x: availableWidth * committedRatio)
-                        }
-                    }
-                }
-                .frame(height: 12)
-                .clipShape(Capsule())
-            }
-            .frame(height: 14)
-            .animation(.easeOut(duration: 0.12), value: totalAfterPending)
-
-            HStack(spacing: 8) {
-                if isOverBudget {
-                    Text("Overbudget by \(overBudgetAmount, format: .currency(code: currencyCode))")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.red)
-                } else {
-                    Text("Committed: \(committedSpend, format: .currency(code: currencyCode))")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("Pending: \(pendingAmount, format: .currency(code: currencyCode))")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var remainingRow: some View {
-        HStack {
-            Text("Remaining Budget:")
-                .font(.subheadline.weight(.semibold))
-            Spacer()
-            if #available(iOS 17.0, *) {
-                Text(remainingAfterPending, format: .currency(code: currencyCode))
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
-                    .contentTransition(.numericText(value: remainingAfterPending))
-                    .animation(.easeOut(duration: 0.12), value: remainingAfterPending)
-            } else {
-                Text(remainingAfterPending, format: .currency(code: currencyCode))
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
-            }
-        }
-    }
-
-    private var controlGrid: some View {
-        HStack(alignment: .center, spacing: 18) {
-            adjustmentGrid(deltas: [-20, -10, -5, -1, -0.25, -0.05])
-                .frame(maxWidth: .infinity)
-            addButton
-                .frame(maxWidth: .infinity)
-            adjustmentGrid(deltas: [0.05, 0.25, 1, 5, 10, 20])
-                .frame(maxWidth: .infinity)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
-    }
-
-    private func adjustmentGrid(deltas: [Double]) -> some View {
-        VStack(spacing: 12) {
-            adjustmentRow(deltas: Array(deltas.prefix(3)))
-            adjustmentRow(deltas: Array(deltas.suffix(3)))
-        }
-    }
-
-    private func adjustmentRow(deltas: [Double]) -> some View {
-        HStack(spacing: 8) {
-            ForEach(deltas, id: \.self) { delta in
-                adjustmentButton(delta: delta)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func adjustmentButton(delta: Double) -> some View {
-        let label = Text(formattedDeltaLabel(for: delta))
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.white)
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-
-        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
-            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
-                label
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(adjustmentTint(for: delta))
-            .frame(height: 40)
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .simultaneousGesture(TapGesture().onEnded {
-                adjustStoredAmount(by: delta)
-            })
-        } else {
-            Button(action: {
-                adjustStoredAmount(by: delta)
-            }) {
-                label
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(adjustmentTint(for: delta))
-            .frame(height: 40)
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-    }
-
-    private func formattedDeltaLabel(for delta: Double) -> String {
-        let absolute = abs(delta)
-        let sign = delta < 0 ? "-" : ""
-
-        if absolute < 1 {
-            let cents = Int((absolute * 100).rounded())
-            return "\(sign)\(cents)¢"
-        }
-
-        let wholeDollars = Int(absolute.rounded())
-        return "\(sign)$\(wholeDollars)"
-    }
-
-    private func adjustmentTint(for delta: Double) -> Color {
-        delta < 0 ? .red : .blue
-    }
-
-    @ViewBuilder
-    private var addButton: some View {
-        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
-            VStack(spacing: 10) {
-                Button(intent: quickIntent) {
-                    Text("+")
-                        .font(.system(size: 32, weight: .bold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                }
-                .buttonStyle(.borderedProminent)
-                .frame(height: 80)
-                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                Button(action: {
-                    storedAmount = 0
-                    WidgetCenter.shared.reloadAllTimelines()
-                }) {
-                    Text("Clear")
-                        .font(.caption.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(.bordered)
-                .frame(height: 34)
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-        } else {
-            Text("Requires latest OS for quick add")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-        }
-    }
-
-
-    private var primaryWidgetView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("Budget", systemImage: "creditcard")
-                    .font(.headline)
-                Spacer()
-                Text(entry.monthlyBudget, format: .currency(code: currencyCode))
-                    .font(.caption)
-            }
-
-            ProgressView(value: spendingProgress)
-                .tint(entry.remaining >= 0 ? Color.blue : Color.red)
-                .animation(.easeOut(duration: 0.12), value: spendingProgress)
-
-            VStack(alignment: .leading, spacing: 4) {
-                valueRow(title: entry.remaining >= 0 ? "Remaining" : "Over", value: entry.remaining, emphasizeNegative: true)
-                valueRow(title: "Remaining after", value: remainingAfterPending, emphasizeNegative: true)
-            }
-
-            primaryActionRow
-        }
-        .padding()
-    }
-
+    
+    /// A view for the rectangular accessory widget family (e.g., on the Lock Screen).
     private var accessoryRectangularView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -421,6 +238,7 @@ struct BudgetWidgetView: View {
         .padding(.vertical, 6)
     }
 
+    /// A view for the inline accessory widget family, which displays as a line of text.
     private var accessoryInlineView: some View {
         HStack(spacing: 6) {
             Text("After")
@@ -438,6 +256,7 @@ struct BudgetWidgetView: View {
         .font(.caption2)
     }
 
+    /// A view for the circular accessory widget family.
     private var accessoryCircularView: some View {
         ZStack {
             Circle()
@@ -469,9 +288,259 @@ struct BudgetWidgetView: View {
                 .padding(.bottom, 4)
         }
     }
+    
+    /// A fallback view for unsupported or default widget families.
+    private var primaryWidgetView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Budget", systemImage: "creditcard")
+                    .font(.headline)
+                Spacer()
+                Text(entry.monthlyBudget, format: .currency(code: currencyCode))
+                    .font(.caption)
+            }
 
-    // MARK: - Components
+            ProgressView(value: spendingProgress)
+                .tint(entry.remaining >= 0 ? Color.blue : Color.red)
+                .animation(.easeOut(duration: 0.12), value: spendingProgress)
 
+            VStack(alignment: .leading, spacing: 4) {
+                valueRow(title: entry.remaining >= 0 ? "Remaining" : "Over", value: entry.remaining, emphasizeNegative: true)
+                valueRow(title: "Remaining after", value: remainingAfterPending, emphasizeNegative: true)
+            }
+
+            primaryActionRow
+        }
+        .padding()
+    }
+
+
+    // MARK: - Medium Widget Components
+
+    /// A reusable component for the medium widget's header, showing the "Monthly Budget" title and amount.
+    private var headerRow: some View {
+        HStack {
+            Text("Monthly Budget")
+                .font(.subheadline.weight(.semibold))
+                .minimumScaleFactor(0.8)
+            Spacer()
+            Text(entry.monthlyBudget, format: .currency(code: currencyCode))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    /// A reusable component that displays the budget progress bar, indicating committed and pending spending.
+    private var budgetProgressSection: some View {
+        let budget = max(entry.monthlyBudget, 1)
+        let committedRatio = min(committedSpend / budget, 1)
+        let totalRatio = min(totalAfterPending / budget, 1)
+        let pendingRatio = max(0, totalRatio - committedRatio)
+        let isOverBudget = totalAfterPending > entry.monthlyBudget
+
+        return VStack(alignment: .leading, spacing: 4) {
+            GeometryReader { proxy in
+                let availableWidth = proxy.size.width
+
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.2))
+
+                    if isOverBudget {
+                        Capsule()
+                            .fill(Color.red)
+                            .frame(width: availableWidth)
+                    } else {
+                        if committedRatio > 0 {
+                            Capsule()
+                                .fill(Color.green)
+                                .frame(width: availableWidth * committedRatio)
+                        }
+
+                        if pendingRatio > 0 {
+                            Capsule()
+                                .fill(Color.green.opacity(0.45))
+                                .frame(width: availableWidth * pendingRatio)
+                                .offset(x: availableWidth * committedRatio)
+                        }
+                    }
+                }
+                .frame(height: 10)
+                .clipShape(Capsule())
+            }
+            .frame(height: 12)
+            .animation(.easeOut(duration: 0.12), value: totalAfterPending)
+
+            HStack(spacing: 8) {
+                if isOverBudget {
+                    Text("Overbudget by \(overBudgetAmount, format: .currency(code: currencyCode))")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.red)
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(1)
+                } else {
+                    Text("Committed: \(committedSpend, format: .currency(code: currencyCode))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(1)
+                    Spacer()
+                    Text("Pending: \(pendingAmount, format: .currency(code: currencyCode))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+
+    /// A reusable component showing the final remaining budget after accounting for pending expenses.
+    private var remainingRow: some View {
+        HStack {
+            Text("Remaining Budget:")
+                .font(.subheadline.weight(.semibold))
+                .minimumScaleFactor(0.9)
+            Spacer()
+            if #available(iOS 17.0, *) {
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .font(.title3.monospacedDigit())
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                    .contentTransition(.numericText(value: remainingAfterPending))
+                    .animation(.easeOut(duration: 0.12), value: remainingAfterPending)
+            } else {
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .font(.title3.monospacedDigit())
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+            }
+        }
+    }
+
+    /// The grid of interactive controls for adjusting the pending amount and adding the expense.
+    private var controlGrid: some View {
+        HStack(alignment: .center, spacing: 8) {
+            adjustmentGrid(deltas: [0.05, 0.25, 1, 5, 10, 20])
+                .frame(maxWidth: .infinity)
+            addButton
+                .frame(width: 70)
+        }
+    }
+
+    /// Creates a 2x3 grid of adjustment buttons.
+    private func adjustmentGrid(deltas: [Double]) -> some View {
+        VStack(spacing: 6) {
+            adjustmentRow(deltas: Array(deltas.prefix(3)))
+            adjustmentRow(deltas: Array(deltas.suffix(3)))
+        }
+    }
+
+    /// Creates a row of three adjustment buttons.
+    private func adjustmentRow(deltas: [Double]) -> some View {
+        HStack(spacing: 4) {
+            ForEach(deltas, id: \.self) { delta in
+                adjustmentButton(delta: delta)
+            }
+        }
+    }
+
+    /// Creates a single button for adjusting the pending amount by a specific delta.
+    @ViewBuilder
+    private func adjustmentButton(delta: Double) -> some View {
+        let label = Text(formattedDeltaLabel(for: delta))
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            .frame(maxWidth: .infinity)
+
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
+                label
+            }
+            .buttonStyle(.plain)
+            .background(adjustmentTint(for: delta), in: .rect(cornerRadius: 8))
+            .frame(height: 32)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .simultaneousGesture(TapGesture().onEnded {
+                // On older OS versions without interactive widgets, this gesture provides the action.
+                // On newer OS, it runs alongside the intent for immediate UI feedback.
+                adjustStoredAmount(by: delta)
+            })
+        } else {
+            // Fallback for older OS versions that don't support interactive widget buttons.
+            Button(action: {
+                adjustStoredAmount(by: delta)
+            }) {
+                label
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(adjustmentTint(for: delta))
+            .frame(height: 32)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+    }
+    
+    /// The central "Add" and "Clear" button section in the medium widget.
+    @ViewBuilder
+    private var addButton: some View {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            VStack(spacing: 6) {
+                // The main "Add" button, which triggers the AddExpenseIntent.
+                Button(intent: quickIntent) {
+                    Text("+")
+                        .font(.system(size: 24, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                // The "Clear" button to reset the pending amount to zero.
+                Button(intent: ClearQuickAmountIntent()) {
+                    Text("Clear")
+                        .font(.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.bordered)
+                .frame(height: 30)
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .simultaneousGesture(TapGesture().onEnded {
+                    // This provides immediate UI feedback while the intent runs.
+                    storedAmount = 0
+                })
+            }
+        } else {
+            Text("Requires latest OS for quick add")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    // MARK: - Reusable UI Components & Helpers
+
+    /// Formats a numeric delta into a user-friendly string (e.g., "-$5" or "-25¢").
+    private func formattedDeltaLabel(for delta: Double) -> String {
+        let absolute = abs(delta)
+        let sign = delta < 0 ? "-" : "+"
+
+        if absolute < 1 {
+            let cents = Int((absolute * 100).rounded())
+            return "\(sign)\(cents)¢"
+        }
+
+        let wholeDollars = Int(absolute.rounded())
+        return "\(sign)$\(wholeDollars)"
+    }
+
+    /// Determines the button color based on whether the delta is positive (blue) or negative (red).
+    private func adjustmentTint(for delta: Double) -> Color {
+        delta < 0 ? .red : .blue
+    }
+
+    /// A reusable view component for displaying a titled value, like "Remaining" and its amount.
     private func valueRow(title: String, value: Double, emphasizeNegative: Bool = false, compact: Bool = false) -> some View {
         HStack {
             Text(title)
@@ -492,6 +561,7 @@ struct BudgetWidgetView: View {
         }
     }
 
+    /// A set of controls for adjusting the pending amount, used in accessory and primary layouts.
     private func adjustmentControls(font: Font, weight: Font.Weight = .regular, spacing: CGFloat = 6, showCurrency: Bool = true) -> some View {
         return HStack(spacing: spacing) {
             Button(intent: AdjustQuickAmountIntent(delta: -adjustmentStep)) {
@@ -530,6 +600,7 @@ struct BudgetWidgetView: View {
         .fontWeight(weight)
     }
 
+    /// The increment/decrement step value for adjustment controls, which varies by widget family.
     private var adjustmentStep: Double {
         switch family {
         case .accessoryInline, .accessoryCircular:
@@ -539,10 +610,12 @@ struct BudgetWidgetView: View {
         }
     }
 
+    /// The background color for the widget, which changes based on whether the budget is positive or overspent.
     private var remainingBackground: Color {
         entry.remaining >= 0 ? Color.green : Color.red
     }
-
+    
+    /// The primary action row for the default widget layout, containing adjustment and add controls.
     @ViewBuilder
     private var primaryActionRow: some View {
         HStack(spacing: 14) {
@@ -552,6 +625,7 @@ struct BudgetWidgetView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
+    /// The button for quickly adding the pending expense amount.
     @ViewBuilder
     private func quickAddControl(compact: Bool = false) -> some View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
@@ -564,7 +638,7 @@ struct BudgetWidgetView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(compact ? .small : .regular)
             .simultaneousGesture(TapGesture().onEnded {
-                // Reset the quick amount after adding an expense so selector returns to 0
+                // Reset the pending amount after adding an expense so the selector returns to 0.
                 storedAmount = 0
                 WidgetCenter.shared.reloadAllTimelines()
             })
@@ -576,6 +650,8 @@ struct BudgetWidgetView: View {
         }
     }
 }
+
+// MARK: - Widget Preview
 
 #Preview(as: .systemMedium) {
     BudgetWidget()

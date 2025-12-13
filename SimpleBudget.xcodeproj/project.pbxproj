@@ -63,6 +63,13 @@
 			);
 			target = 47C425F19DAC40479B33182B /* BudgetWidget */;
 		};
+		3E68D7872EED21F200F3CB6A /* Exceptions for "BudgetWidget" folder in "SimpleBudget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AddExpenseIntent.swift,
+			);
+			target = 3EC2C6272EDFC49C0068D990 /* SimpleBudget */;
+		};
 		3EC2C64B2EDFC49C0068D990 /* Exceptions for "SimpleBudget" folder in "SimpleBudget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -99,6 +106,7 @@
 		E3E6E430BC2E4910BC4CF1BE /* BudgetWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				3E68D7872EED21F200F3CB6A /* Exceptions for "BudgetWidget" folder in "SimpleBudget" target */,
 				3E4BED592EE6AC9800236453 /* Exceptions for "BudgetWidget" folder in "BudgetWidget" target */,
 			);
 			path = BudgetWidget;
