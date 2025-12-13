@@ -81,6 +81,9 @@ struct BudgetWidgetView: View {
 
     private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
     private var pendingAmount: Double { storedAmount }
+    private var committedSpend: Double { max(entry.monthlyBudget - entry.remaining, 0) }
+    private var totalAfterPending: Double { committedSpend + pendingAmount }
+    private var overBudgetAmount: Double { max(0, totalAfterPending - entry.monthlyBudget) }
     private var remainingAfterPending: Double { entry.remaining - pendingAmount }
     private var spendingProgress: Double {
         min(max(0, entry.monthlyBudget - entry.remaining) / max(entry.monthlyBudget, 1), 1)
@@ -104,6 +107,8 @@ struct BudgetWidgetView: View {
                 accessoryRectangularView
             case .systemSmall:
                 systemSmallView
+            case .systemMedium:
+                systemMediumView
             default:
                 primaryWidgetView
             }
@@ -139,6 +144,163 @@ struct BudgetWidgetView: View {
             .padding()
         }
     }
+
+    private var systemMediumView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            headerRow
+            budgetProgressSection
+            remainingRow
+            controlGrid
+        }
+        .padding()
+    }
+
+    private var headerRow: some View {
+        HStack {
+            Text("Monthly Budget")
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            Text(entry.monthlyBudget, format: .currency(code: currencyCode))
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var budgetProgressSection: some View {
+        let budget = max(entry.monthlyBudget, 1)
+        let committedRatio = min(committedSpend / budget, 1)
+        let totalRatio = min(totalAfterPending / budget, 1)
+        let pendingRatio = max(0, totalRatio - committedRatio)
+        let isOverBudget = totalAfterPending > entry.monthlyBudget
+
+        return VStack(alignment: .leading, spacing: 6) {
+            GeometryReader { proxy in
+                let availableWidth = proxy.size.width
+
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.2))
+
+                    if isOverBudget {
+                        Capsule()
+                            .fill(Color.red)
+                            .frame(width: availableWidth)
+                    } else {
+                        if committedRatio > 0 {
+                            Capsule()
+                                .fill(Color.green)
+                                .frame(width: availableWidth * committedRatio)
+                        }
+
+                        if pendingRatio > 0 {
+                            Capsule()
+                                .fill(Color.green.opacity(0.45))
+                                .frame(width: availableWidth * pendingRatio)
+                                .offset(x: availableWidth * committedRatio)
+                        }
+                    }
+                }
+                .frame(height: 12)
+                .clipShape(Capsule())
+            }
+            .frame(height: 14)
+            .animation(.easeOut(duration: 0.12), value: totalAfterPending)
+
+            HStack(spacing: 8) {
+                if isOverBudget {
+                    Text("Overbudget by \(overBudgetAmount, format: .currency(code: currencyCode))")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.red)
+                } else {
+                    Text("Committed: \(committedSpend, format: .currency(code: currencyCode))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("Pending: \(pendingAmount, format: .currency(code: currencyCode))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private var remainingRow: some View {
+        HStack {
+            Text("Remaining Budget:")
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            if #available(iOS 17.0, *) {
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                    .contentTransition(.numericText(value: remainingAfterPending))
+                    .animation(.easeOut(duration: 0.12), value: remainingAfterPending)
+            } else {
+                Text(remainingAfterPending, format: .currency(code: currencyCode))
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+            }
+        }
+    }
+
+    private var controlGrid: some View {
+        HStack(alignment: .center, spacing: 12) {
+            adjustmentGrid(deltas: [-20, -10, -5, -1, -0.25, -0.05])
+                .frame(maxWidth: .infinity)
+            addButton
+                .frame(maxWidth: .infinity)
+            adjustmentGrid(deltas: [0.05, 0.25, 1, 5, 10, 20])
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func adjustmentGrid(deltas: [Double]) -> some View {
+        VStack(spacing: 8) {
+            adjustmentRow(deltas: Array(deltas.prefix(3)))
+            adjustmentRow(deltas: Array(deltas.suffix(3)))
+        }
+    }
+
+    private func adjustmentRow(deltas: [Double]) -> some View {
+        HStack(spacing: 8) {
+            ForEach(deltas, id: \.self) { delta in
+                adjustmentButton(delta: delta)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func adjustmentButton(delta: Double) -> some View {
+        Button(intent: AdjustQuickAmountIntent(delta: delta)) {
+            Text(delta, format: .currency(code: currencyCode))
+                .font(.caption.weight(.semibold))
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+    }
+
+    @ViewBuilder
+    private var addButton: some View {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: quickIntent) {
+                Text("ADD \(pendingAmount, format: .currency(code: currencyCode))")
+                    .font(.headline.weight(.bold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .simultaneousGesture(TapGesture().onEnded {
+                storedAmount = 0
+                WidgetCenter.shared.reloadAllTimelines()
+            })
+        } else {
+            Text("Requires latest OS for quick add")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
 
     private var primaryWidgetView: some View {
         VStack(alignment: .leading, spacing: 10) {
