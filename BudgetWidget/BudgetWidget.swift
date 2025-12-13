@@ -272,7 +272,7 @@ struct BudgetWidgetView: View {
     @ViewBuilder
     private func adjustmentButton(delta: Double) -> some View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
-            AppIntentButton(AdjustQuickAmountIntent(delta: delta)) {
+            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
                 Text(delta, format: .currency(code: currencyCode))
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
