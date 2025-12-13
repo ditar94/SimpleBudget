@@ -271,12 +271,28 @@ struct BudgetWidgetView: View {
 
     @ViewBuilder
     private func adjustmentButton(delta: Double) -> some View {
-        Button(intent: AdjustQuickAmountIntent(delta: delta)) {
-            Text(delta, format: .currency(code: currencyCode))
-                .font(.caption.weight(.semibold))
-                .frame(maxWidth: .infinity)
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
+                Text(delta, format: .currency(code: currencyCode))
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .simultaneousGesture(TapGesture().onEnded {
+                storedAmount = max(0, storedAmount + delta)
+                WidgetCenter.shared.reloadAllTimelines()
+            })
+        } else {
+            Button(action: {
+                storedAmount = max(0, storedAmount + delta)
+                WidgetCenter.shared.reloadAllTimelines()
+            }) {
+                Text(delta, format: .currency(code: currencyCode))
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
         }
-        .buttonStyle(.bordered)
     }
 
     @ViewBuilder
