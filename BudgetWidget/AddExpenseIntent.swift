@@ -44,7 +44,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
         BudgetWidgetAmountStore.defaults.set(0, forKey: BudgetWidgetAmountStore.key)
         CrossProcessNotifier.signalDataChange()
         WidgetCenter.shared.reloadAllTimelines()
-        return .result(value: "Saved")
+        return .result(dialog: IntentDialog("Saved"))
     }
 }
 
