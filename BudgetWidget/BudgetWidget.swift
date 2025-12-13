@@ -203,14 +203,30 @@ struct BudgetWidgetView: View {
 
     /// A detailed, interactive view for the medium system-sized widget.
     private var systemMediumView: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            headerRow
-            budgetProgressSection
-            remainingRow
-            controlGrid
+        ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.22), Color.teal.opacity(0.14)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+
+            VStack(alignment: .leading, spacing: 8) {
+                headerRow
+                budgetProgressSection
+                remainingRow
+                controlGrid
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 14)
         }
-        .padding(.vertical, 12)
-        .background(Color.secondary.opacity(0.14))
+        .padding(.horizontal, 4)
     }
     
     /// A view for the rectangular accessory widget family (e.g., on the Lock Screen).
@@ -418,98 +434,57 @@ struct BudgetWidgetView: View {
 
     /// The grid of interactive controls for adjusting the pending amount and adding the expense.
     private var controlGrid: some View {
-        HStack(alignment: .center, spacing: 8) {
-            adjustmentGrid(deltas: [0.05, 0.25, 1, 5, 10, 20])
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                adjustmentStepperButton(delta: -1, systemImage: "minus.circle.fill")
+
+                VStack(spacing: 2) {
+                    Text("Pending amount")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Text(pendingAmount, format: .currency(code: currencyCode))
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(Color.blue)
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(1)
+                }
                 .frame(maxWidth: .infinity)
-            addButton
-                .frame(width: 70)
-        }
-    }
 
-    /// Creates a 2x3 grid of adjustment buttons.
-    private func adjustmentGrid(deltas: [Double]) -> some View {
-        VStack(spacing: 6) {
-            adjustmentRow(deltas: Array(deltas.prefix(3)))
-            adjustmentRow(deltas: Array(deltas.suffix(3)))
-        }
-    }
-
-    /// Creates a row of three adjustment buttons.
-    private func adjustmentRow(deltas: [Double]) -> some View {
-        HStack(spacing: 4) {
-            ForEach(deltas, id: \.self) { delta in
-                adjustmentButton(delta: delta)
+                adjustmentStepperButton(delta: 1, systemImage: "plus.circle.fill")
             }
-        }
-    }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.12))
+            )
 
-    /// Creates a single button for adjusting the pending amount by a specific delta.
-    @ViewBuilder
-    private func adjustmentButton(delta: Double) -> some View {
-        let label = Text(formattedDeltaLabel(for: delta))
-            .font(.system(size: 20, weight: .semibold))
-            .foregroundStyle(.white)
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .frame(maxWidth: .infinity)
+            HStack(spacing: 8) {
+                addButton
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.blue)
+                    .frame(maxWidth: .infinity)
 
-        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
-            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
-                label
+                clearButton
+                    .buttonStyle(.bordered)
+                    .tint(Color.teal)
+                    .frame(width: 90)
             }
-            .buttonStyle(.plain)
-            .background(adjustmentTint(for: delta), in: .rect(cornerRadius: 8))
-            .frame(height: 32)
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .simultaneousGesture(TapGesture().onEnded {
-                // On older OS versions without interactive widgets, this gesture provides the action.
-                // On newer OS, it runs alongside the intent for immediate UI feedback.
-                adjustStoredAmount(by: delta)
-            })
-        } else {
-            // Fallback for older OS versions that don't support interactive widget buttons.
-            Button(action: {
-                adjustStoredAmount(by: delta)
-            }) {
-                label
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(adjustmentTint(for: delta))
-            .frame(height: 32)
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
     }
     
-    /// The central "Add" and "Clear" button section in the medium widget.
+    /// The central "Add" button in the medium widget.
     @ViewBuilder
     private var addButton: some View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
-            VStack(spacing: 6) {
-                // The main "Add" button, which triggers the AddExpenseIntent.
-                Button(intent: quickIntent) {
-                    Text("+")
-                        .font(.system(size: 24, weight: .bold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                }
-                .buttonStyle(.borderedProminent)
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                // The "Clear" button to reset the pending amount to zero.
-                Button(intent: ClearQuickAmountIntent()) {
-                    Text("Clear")
-                        .font(.caption.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                }
-                .buttonStyle(.bordered)
-                .frame(height: 30)
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .simultaneousGesture(TapGesture().onEnded {
-                    // This provides immediate UI feedback while the intent runs.
-                    storedAmount = 0
-                })
+            Button(intent: quickIntent) {
+                Label("Add expense", systemImage: "plus.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
             }
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         } else {
             Text("Requires latest OS for quick add")
                 .font(.caption)
@@ -519,26 +494,56 @@ struct BudgetWidgetView: View {
         }
     }
 
-    // MARK: - Reusable UI Components & Helpers
-
-    /// Formats a numeric delta into a user-friendly string (e.g., "-$5" or "-25¢").
-    private func formattedDeltaLabel(for delta: Double) -> String {
-        let absolute = abs(delta)
-        let sign = delta < 0 ? "-" : "+"
-
-        if absolute < 1 {
-            let cents = Int((absolute * 100).rounded())
-            return "\(sign)\(cents)¢"
+    /// The secondary clear action displayed alongside the Add button.
+    @ViewBuilder
+    private var clearButton: some View {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: ClearQuickAmountIntent()) {
+                Label("Clear", systemImage: "arrow.uturn.left")
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .simultaneousGesture(TapGesture().onEnded {
+                // This provides immediate UI feedback while the intent runs.
+                storedAmount = 0
+            })
         }
-
-        let wholeDollars = Int(absolute.rounded())
-        return "\(sign)$\(wholeDollars)"
     }
 
-    /// Determines the button color based on whether the delta is positive (blue) or negative (red).
-    private func adjustmentTint(for delta: Double) -> Color {
-        delta < 0 ? .red : .blue
+    /// Creates a single button for adjusting the pending amount by a specific delta.
+    @ViewBuilder
+    private func adjustmentStepperButton(delta: Double, systemImage: String) -> some View {
+        let tint = delta > 0 ? Color.blue : Color.teal
+
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
+                Image(systemName: systemImage)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 42, height: 42)
+                    .background(tint.gradient, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded {
+                adjustStoredAmount(by: delta)
+            })
+        } else {
+            Button(action: {
+                adjustStoredAmount(by: delta)
+            }) {
+                Image(systemName: systemImage)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 42, height: 42)
+                    .background(tint.gradient, in: Circle())
+            }
+            .buttonStyle(.plain)
+        }
     }
+
+    // MARK: - Reusable UI Components & Helpers
 
     /// A reusable view component for displaying a titled value, like "Remaining" and its amount.
     private func valueRow(title: String, value: Double, emphasizeNegative: Bool = false, compact: Bool = false) -> some View {
