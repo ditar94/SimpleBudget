@@ -455,10 +455,12 @@ struct BudgetWidgetView: View {
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.12))
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.white.opacity(0.12))
             )
+
+            presetIncrementGrid
 
             HStack(spacing: 8) {
                 addButton
@@ -471,6 +473,70 @@ struct BudgetWidgetView: View {
                     .tint(Color.teal)
                     .frame(width: 90)
             }
+        }
+    }
+
+    /// Presents quick increment buttons for common amounts.
+    private var presetIncrementGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(presetIncrements, id: \.self) { increment in
+                presetIncrementButton(delta: increment)
+            }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    /// Supported preset increment values.
+    private var presetIncrements: [Double] { [0.05, 0.25, 1, 5, 10, 25] }
+
+    /// A single preset increment button wired to AdjustQuickAmountIntent.
+    @ViewBuilder
+    private func presetIncrementButton(delta: Double) -> some View {
+        let label = Text(delta, format: .currency(code: currencyCode))
+
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            Button(intent: AdjustQuickAmountIntent(delta: delta)) {
+                label
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.blue.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.teal.opacity(0.4), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded {
+                adjustStoredAmount(by: delta)
+            })
+            .accessibilityLabel("Add \(delta, format: .currency(code: currencyCode))")
+        } else {
+            Button(action: {
+                adjustStoredAmount(by: delta)
+            }) {
+                label
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.blue.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.teal.opacity(0.4), lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add \(delta, format: .currency(code: currencyCode))")
         }
     }
     
