@@ -547,78 +547,85 @@ private struct BudgetDial: View {
     var body: some View {
         VStack(spacing: 6) {
             GeometryReader { proxy in
-                let dialSize = min(proxy.size.width, maxDialDiameter)
-                let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
                 let ringWidth: CGFloat = 18
-                let ringRadius = dialSize / 2 - ringWidth / 2
-                let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
-                let endPoint = CGPoint(
-                    x: center.x + cos(CGFloat(endAngle.radians)) * ringRadius,
-                    y: center.y + sin(CGFloat(endAngle.radians)) * ringRadius
-                )
-                let dragGesture = DragGesture(minimumDistance: 0, coordinateSpace: .named("dial"))
-                    .updating($isDragging) { _, state, _ in
-                        state = true
-                    }
-                    .onChanged { value in
-                        updateAmount(from: value.location, in: CGSize(width: dialSize, height: dialSize))
-                    }
-                    .onEnded { _ in
-                        resetDragState()
-                    }
+                let availableWidth = proxy.size.width
 
-                ZStack {
-                    if isMonthOverBudget || isProjectedOverBudget {
-                        Circle()
-                            .stroke(Color.red, lineWidth: ringWidth)
-                            .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
-                    } else {
-                        Circle()
-                            .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
-                            .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+                let dialSize = max(min(availableWidth, maxDialDiameter), ringWidth)
 
-                        let fillGradient = AngularGradient(
-                            colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
-                            center: .center,
-                            startAngle: .degrees(0),
-                            endAngle: .degrees(primaryTrim * 360)
-                        )
-
-                        Circle()
-                            .trim(from: 0, to: primaryTrim)
-                            .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                            .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
-                    }
-
-                    Circle()
-                        .fill(Color.black)
-                        .frame(width: 17, height: 17)
-                        .position(endPoint)
-                        .contentShape(Circle().inset(by: -28))
-                        .highPriorityGesture(dragGesture)
-
-                    VStack(spacing: 6) {
-                        amountText
-                        Button {
-                            amount = 0
-                        } label: {
-
-                                HStack(spacing: 6) {
-                                    Image(systemName: "xmark")
-                                    Text("Clear")
-                                        .font(.system(size: 13, weight: .semibold))
-                                }
-                                .foregroundStyle(notZero ? Color.secondaryLabel : Color.pageBackground)
-
+                if availableWidth.isFinite && availableWidth >= ringWidth {
+                    let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
+                    let ringRadius = max(dialSize / 2 - ringWidth / 2, 0)
+                    let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
+                    let endPoint = CGPoint(
+                        x: center.x + cos(CGFloat(endAngle.radians)) * ringRadius,
+                        y: center.y + sin(CGFloat(endAngle.radians)) * ringRadius
+                    )
+                    let dragGesture = DragGesture(minimumDistance: 0, coordinateSpace: .named("dial"))
+                        .updating($isDragging) { _, state, _ in
+                            state = true
                         }
-                        .buttonStyle(.plain)
+                        .onChanged { value in
+                            updateAmount(from: value.location, in: CGSize(width: dialSize, height: dialSize))
+                        }
+                        .onEnded { _ in
+                            resetDragState()
+                        }
+
+                    ZStack {
+                        if isMonthOverBudget || isProjectedOverBudget {
+                            Circle()
+                                .stroke(Color.red, lineWidth: ringWidth)
+                                .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+                        } else {
+                            Circle()
+                                .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
+                                .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+
+                            let fillGradient = AngularGradient(
+                                colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(primaryTrim * 360)
+                            )
+
+                            Circle()
+                                .trim(from: 0, to: primaryTrim)
+                                .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                                .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+                        }
+
+                        Circle()
+                            .fill(Color.black)
+                            .frame(width: 17, height: 17)
+                            .position(endPoint)
+                            .contentShape(Circle().inset(by: -28))
+                            .highPriorityGesture(dragGesture)
+
+                        VStack(spacing: 6) {
+                            amountText
+                            Button {
+                                amount = 0
+                            } label: {
+
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "xmark")
+                                        Text("Clear")
+                                            .font(.system(size: 13, weight: .semibold))
+                                    }
+                                    .foregroundStyle(notZero ? Color.secondaryLabel : Color.pageBackground)
+
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
+                    .frame(width: dialSize, height: dialSize, alignment: .center)
+                    .contentShape(Circle().inset(by: -24))
+                    .coordinateSpace(name: "dial")
+                    .gesture(dragGesture)
+                } else {
+                    Color.clear
                 }
-                .frame(width: dialSize, height: dialSize, alignment: .center)
-                .contentShape(Circle().inset(by: -24))
-                .coordinateSpace(name: "dial")
-                .gesture(dragGesture)
             }
             .frame(maxWidth: .infinity)
             .frame(maxWidth: maxDialDiameter)
