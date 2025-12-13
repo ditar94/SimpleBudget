@@ -275,9 +275,13 @@ struct BudgetWidgetView: View {
             Button(intent: AdjustQuickAmountIntent(delta: delta)) {
                 Text(delta, format: .currency(code: currencyCode))
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .tint(.primary)
             .simultaneousGesture(TapGesture().onEnded {
                 storedAmount = max(0, storedAmount + delta)
                 WidgetCenter.shared.reloadAllTimelines()
@@ -289,9 +293,13 @@ struct BudgetWidgetView: View {
             }) {
                 Text(delta, format: .currency(code: currencyCode))
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .tint(.primary)
         }
     }
 
@@ -300,11 +308,12 @@ struct BudgetWidgetView: View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: quickIntent) {
                 Text("ADD \(pendingAmount, format: .currency(code: currencyCode))")
-                    .font(.headline.weight(.bold))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
             .simultaneousGesture(TapGesture().onEnded {
                 storedAmount = 0
                 WidgetCenter.shared.reloadAllTimelines()
