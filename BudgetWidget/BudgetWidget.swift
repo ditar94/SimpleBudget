@@ -154,18 +154,20 @@ struct BudgetWidgetView: View {
     }
 
     private var systemMediumView: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             headerRow
             budgetProgressSection
             remainingRow
             controlGrid
         }
-        .padding(14)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color.secondary.opacity(0.14))
         )
-        .padding(8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     private var headerRow: some View {
@@ -174,7 +176,7 @@ struct BudgetWidgetView: View {
                 .font(.callout.weight(.semibold))
             Spacer()
             Text(entry.monthlyBudget, format: .currency(code: currencyCode))
-                .font(.footnote.monospacedDigit())
+                .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
     }
@@ -257,7 +259,7 @@ struct BudgetWidgetView: View {
     }
 
     private var controlGrid: some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: 18) {
             adjustmentGrid(deltas: [-20, -10, -5, -1, -0.25, -0.05])
                 .frame(maxWidth: .infinity)
             addButton
@@ -265,10 +267,12 @@ struct BudgetWidgetView: View {
             adjustmentGrid(deltas: [0.05, 0.25, 1, 5, 10, 20])
                 .frame(maxWidth: .infinity)
         }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
     }
 
     private func adjustmentGrid(deltas: [Double]) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             adjustmentRow(deltas: Array(deltas.prefix(3)))
             adjustmentRow(deltas: Array(deltas.suffix(3)))
         }
