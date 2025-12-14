@@ -229,9 +229,9 @@ struct BudgetWidgetView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: spendingProgress)
 
             HStack {
-                valueRow(title: "After", value: remainingAfterPending, emphasizeNegative: true, compact: true)
-                Spacer()
-                adjustmentControls(font: .caption2)
+                valueRow(title: "", value: entry.remaining, emphasizeNegative: true, compact: true)
+//                Spacer()
+//                adjustmentControls(font: .caption2)
             }
         }
         .padding(.vertical, 6)
@@ -239,17 +239,17 @@ struct BudgetWidgetView: View {
 
     private var accessoryInlineView: some View {
         HStack(spacing: 6) {
-            Text("After:")
+            Text("Remaining:")
             if #available(iOS 17.0, *) {
-                Text(remainingAfterPending, format: .currency(code: currencyCode))
-                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                Text(entry.remaining, format: .currency(code: currencyCode))
+                    .foregroundStyle(entry.remaining >= 0 ? Color.primary : Color.red)
                     .contentTransition(.numericText())
-                    .animation(.spring(response: 0.2, dampingFraction: 0.8), value: remainingAfterPending)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.8), value: entry.remaining)
             } else {
-                Text(remainingAfterPending, format: .currency(code: currencyCode))
-                    .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                Text(entry.remaining, format: .currency(code: currencyCode))
+                    .foregroundStyle(entry.remaining >= 0 ? Color.primary : Color.red)
             }
-            adjustmentControls(font: .caption2, showCurrency: false)
+            //adjustmentControls(font: .caption2, showCurrency: false)
         }
     }
 
@@ -263,18 +263,18 @@ struct BudgetWidgetView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: spendingProgress)
             
             VStack(spacing: 0) {
-                Text("After")
+                Text("Budget")
                     .font(.caption2)
                 if #available(iOS 17.0, *) {
-                    Text(remainingAfterPending, format: .currency(code: currencyCode))
-                        .font(.system(size: 11, design: .rounded).monospacedDigit().weight(.medium))
-                        .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                    Text(entry.remaining, format: .currency(code: currencyCode))
+                        .font(.system(size: 7, design: .rounded).monospacedDigit().weight(.medium))
+                        .foregroundStyle(entry.remaining >= 0 ? Color.primary : Color.red)
                         .contentTransition(.numericText())
-                        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: remainingAfterPending)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: entry.remaining)
                 } else {
-                    Text(remainingAfterPending, format: .currency(code: currencyCode))
-                        .font(.system(size: 11, design: .rounded).monospacedDigit().weight(.medium))
-                        .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
+                    Text(entry.remaining, format: .currency(code: currencyCode))
+                        .font(.system(size: 7, design: .rounded).monospacedDigit().weight(.medium))
+                        .foregroundStyle(entry.remaining >= 0 ? Color.primary : Color.red)
                 }
             }
         }
@@ -748,7 +748,7 @@ extension BudgetWidgetView {
 
 fileprivate enum Theme {
     static let accentTint = Color(red: 0.5, green: 0.2, blue: 1.0)
-    static let positiveTint = Color.red
+    static let positiveTint = Color.green
     static let negativeTint = Color(red: 1.0, green: 0.3, blue: 0.3)
     
     static let backgroundGradient = LinearGradient(
@@ -922,7 +922,7 @@ fileprivate extension WidgetFamily {
 
 // MARK: - Widget Preview
 
-#Preview(as: .systemSmall) {
+#Preview(as: .systemMedium) {
     BudgetWidget()
 } timeline: {
     
