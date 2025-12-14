@@ -223,14 +223,14 @@ struct BudgetWidgetView: View {
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)
                 )
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 headerRow
                 budgetProgressSection
                 remainingRow
                 controlGrid
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 16)
+            .padding(.vertical, 10)
             .padding(.horizontal, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -445,8 +445,8 @@ struct BudgetWidgetView: View {
 
     /// The grid of interactive controls for adjusting the pending amount and adding the expense.
     private var controlGrid: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 12) {
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
                 adjustmentStepperButton(delta: -1, systemImage: "minus.circle.fill")
 
                 VStack(spacing: 2) {
@@ -464,8 +464,8 @@ struct BudgetWidgetView: View {
 
                 adjustmentStepperButton(delta: 1, systemImage: "plus.circle.fill")
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
             .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -492,14 +492,14 @@ struct BudgetWidgetView: View {
 
     /// Presents quick increment buttons for common amounts.
     private var presetIncrementGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 3)
 
-        return LazyVGrid(columns: columns, spacing: 8) {
+        return LazyVGrid(columns: columns, spacing: 6) {
             ForEach(presetIncrements, id: \.self) { increment in
                 presetIncrementButton(delta: increment)
             }
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 0)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -516,7 +516,7 @@ struct BudgetWidgetView: View {
                 label
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 6)
                     .padding(.horizontal, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -539,7 +539,7 @@ struct BudgetWidgetView: View {
                 label
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 6)
                     .padding(.horizontal, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -563,7 +563,7 @@ struct BudgetWidgetView: View {
                 Label("Add expense", systemImage: "plus.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 8)
             }
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         } else {
@@ -583,7 +583,7 @@ struct BudgetWidgetView: View {
                 Label("Clear", systemImage: "arrow.uturn.left")
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 7)
             }
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .simultaneousGesture(TapGesture().onEnded {
