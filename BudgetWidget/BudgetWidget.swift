@@ -229,10 +229,11 @@ struct BudgetWidgetView: View {
                 remainingRow
                 controlGrid
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 16)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
         }
-        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
     
     /// A view for the rectangular accessory widget family (e.g., on the Lock Screen).
@@ -350,6 +351,7 @@ struct BudgetWidgetView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// A reusable component that displays the budget progress bar, indicating committed and pending spending.
@@ -414,7 +416,9 @@ struct BudgetWidgetView: View {
                         .lineLimit(1)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// A reusable component showing the final remaining budget after accounting for pending expenses.
@@ -436,6 +440,7 @@ struct BudgetWidgetView: View {
                     .foregroundStyle(remainingAfterPending >= 0 ? Color.primary : Color.red)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The grid of interactive controls for adjusting the pending amount and adding the expense.
@@ -461,6 +466,7 @@ struct BudgetWidgetView: View {
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(Color.white.opacity(0.12))
@@ -479,7 +485,9 @@ struct BudgetWidgetView: View {
                     .tint(Color.teal)
                     .frame(width: 90)
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Presents quick increment buttons for common amounts.
@@ -492,6 +500,7 @@ struct BudgetWidgetView: View {
             }
         }
         .padding(.horizontal, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Supported preset increment values.
