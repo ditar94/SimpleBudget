@@ -192,6 +192,8 @@ struct BudgetWidgetView: View {
                 .font(.system(.title, design: .rounded).weight(.bold))
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
         .padding()
     }
