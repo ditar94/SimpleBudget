@@ -199,7 +199,7 @@ struct BudgetWidgetView: View {
     private var systemMediumView: some View {
         HStack(alignment: .top, spacing: 10) {
             // Left column: summary
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .center, spacing: 6) {
                 headerRowCompact
                 budgetProgressSectionCompact
                 remainingRowCompact
@@ -209,12 +209,12 @@ struct BudgetWidgetView: View {
 
             // Right column: controls
             VStack(spacing: 6) {
-                controlStepperCompact
+                amountAdjustmentRow
                 presetIncrementGridCompact
                 addClearRowCompact
                 Spacer(minLength: 0)
             }
-            .frame(width: 115)
+            .frame(width: 165)
         }
         .padding(8)
     }
@@ -560,12 +560,12 @@ struct BudgetWidgetView: View {
 // MARK: - Medium Widget Compact Components
 extension BudgetWidgetView {
     private var headerRowCompact: some View {
-        HStack(spacing: 6) {
+        VStack(spacing: 6) {
             Text("Monthly Budget")
                 .font(.system(.footnote, design: .rounded).weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            Spacer()
+            //Spacer()
             Text(entry.monthlyBudget, format: .currency(code: currencyCode))
                 .font(.system(.caption2, design: .rounded).monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -584,7 +584,7 @@ extension BudgetWidgetView {
         let pendingRatio = max(0, totalRatio - committedRatio)
         let isOverBudget = total > entry.monthlyBudget
 
-        return VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .center, spacing: 4) {
             GeometryReader { proxy in
                 let availableWidth = proxy.size.width
                 let barHeight: CGFloat = 8
@@ -610,7 +610,7 @@ extension BudgetWidgetView {
             .frame(height: 8)
             .animation(.spring(response: 0.4, dampingFraction: 0.7), value: total)
 
-            HStack(spacing: 6) {
+            VStack(spacing: 6) {
                 let font = Font.system(.caption2, design: .rounded).weight(.medium)
                 if isOverBudget {
                     Text("Over by \(max(0, total - entry.monthlyBudget), format: .currency(code: currencyCode))")
@@ -623,7 +623,7 @@ extension BudgetWidgetView {
                         .font(font)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                    Spacer(minLength: 4)
+                   // Spacer(minLength: 4)
                     Text("Pending: \(pendingAmount, format: .currency(code: currencyCode))")
                         .font(font)
                         .lineLimit(1)
@@ -635,10 +635,10 @@ extension BudgetWidgetView {
     }
 
     private var remainingRowCompact: some View {
-        HStack(spacing: 6) {
+        VStack(spacing: 6) {
             Text("Remaining:")
                 .font(.system(.footnote, design: .rounded).weight(.semibold))
-            Spacer()
+            //Spacer()
             if #available(iOS 17.0, *) {
                 Text(remainingAfterPending, format: .currency(code: currencyCode))
                     .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
@@ -658,9 +658,14 @@ extension BudgetWidgetView {
         .foregroundStyle(.white)
     }
 
-    private var controlStepperCompact: some View {
-        HStack(spacing: 6) {
-            adjustmentStepperButtonCompact(delta: -1, systemImage: "minus")
+    private var amountAdjustmentRow: some View {
+        HStack(spacing: 4) {
+            VStack {
+                centAdjustmentButton(delta: -0.05, tint: Theme.negativeTint)
+                centAdjustmentButton(delta: -0.25, tint: Theme.negativeTint)
+                
+            }
+
             Text(pendingAmount, format: .currency(code: currencyCode))
                 .font(.system(.footnote, design: .rounded).weight(.bold).monospacedDigit())
                 .frame(maxWidth: .infinity)
@@ -668,7 +673,10 @@ extension BudgetWidgetView {
                 .background(.black.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            adjustmentStepperButtonCompact(delta: 1, systemImage: "plus")
+            VStack {
+                centAdjustmentButton(delta: 0.05, tint: Theme.positiveTint)
+                centAdjustmentButton(delta: 0.25, tint: Theme.positiveTint)
+            }
         }
         .foregroundStyle(.white)
     }
@@ -697,18 +705,18 @@ extension BudgetWidgetView {
         }
     }
 
-    @ViewBuilder private func adjustmentStepperButtonCompact(delta: Double, systemImage: String) -> some View {
+    @ViewBuilder private func centAdjustmentButton(delta: Double, tint: Color) -> some View {
         let intent = AdjustQuickAmountIntent(delta: delta)
-        let label = Image(systemName: systemImage)
-            .font(.system(.footnote, design: .rounded).weight(.bold))
+        let cents = Int(abs(delta * 100))
+        let label = Text("\(cents)¢")
 
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: intent) { label }
-                .buttonStyle(GlassCircleButtonStyleCompact(tint: .gray))
+                .buttonStyle(SmallGlassPillButtonStyle(tint: tint))
                 .simultaneousGesture(TapGesture().onEnded { adjustStoredAmount(by: delta) })
         } else {
             Button(action: { adjustStoredAmount(by: delta) }) { label }
-                .buttonStyle(GlassCircleButtonStyleCompact(tint: .gray))
+                .buttonStyle(SmallGlassPillButtonStyle(tint: tint))
         }
     }
 
@@ -738,7 +746,7 @@ extension BudgetWidgetView {
 
 fileprivate enum Theme {
     static let accentTint = Color(red: 0.5, green: 0.2, blue: 1.0)
-    static let positiveTint = Color.green
+    static let positiveTint = Color.red
     static let negativeTint = Color(red: 1.0, green: 0.3, blue: 0.3)
     
     static let backgroundGradient = LinearGradient(
@@ -861,6 +869,26 @@ fileprivate struct GlassTileButtonStyleCompact: ButtonStyle {
     }
 }
 
+fileprivate struct SmallGlassPillButtonStyle: ButtonStyle {
+    var tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(.caption2, design: .rounded).weight(.bold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(configuration.isPressed ? 0.5 : 0.3))
+                    .overlay(Capsule().stroke(tint.opacity(0.5), lineWidth: 1))
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
 fileprivate extension WidgetFamily {
     var isSystemFamily: Bool {
         #if os(iOS) || os(macOS)
@@ -892,9 +920,10 @@ fileprivate extension WidgetFamily {
 
 // MARK: - Widget Preview
 
-#Preview(as: .systemMedium) {
+#Preview(as: .systemSmall) {
     BudgetWidget()
 } timeline: {
+    
     BudgetEntry(date: .now, remaining: 1250.75, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
     BudgetEntry(date: .now, remaining: -250.00, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
 }
