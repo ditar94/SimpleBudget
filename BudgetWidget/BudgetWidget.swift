@@ -206,7 +206,6 @@ struct BudgetWidgetView: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .layoutPriority(1)
 
             // Right column: controls
             VStack(spacing: 6) {
@@ -215,7 +214,7 @@ struct BudgetWidgetView: View {
                 addClearRowCompact
                 Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: .topTrailing)
+            .frame(width: 115)
         }
         .padding(8)
     }
@@ -899,4 +898,3 @@ fileprivate extension WidgetFamily {
     BudgetEntry(date: .now, remaining: 1250.75, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
     BudgetEntry(date: .now, remaining: -250.00, monthlyBudget: 2000, quickIntent: AddExpenseIntent())
 }
-
