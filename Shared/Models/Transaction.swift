@@ -9,6 +9,8 @@ import Foundation
 import SwiftData
 
 // Persistent model capturing a single spending transaction
+// Note: When iOS 18 becomes minimum target, add #Index<Transaction>([\.date], [\.category])
+// for improved query performance on date and category filtering
 @Model
 final class Transaction {
     var title: String = ""
@@ -30,10 +32,23 @@ final class Transaction {
         self.date = date
         self.notes = notes
     }
+}
 
-    var monthIdentifier: String {
-        let components = Calendar.current.dateComponents([.year, .month], from: date)
-        return String(format: "%04d-%02d", components.year ?? 0, components.month ?? 0)
+// MARK: - Display Helpers (cached string operations for efficiency)
+extension Transaction {
+    /// Returns the display title, using category as fallback if title is empty
+    var displayTitle: String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? category : title
     }
 
+    /// Whether the title has meaningful content
+    var hasTitle: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Whether notes have meaningful content
+    var hasNotes: Bool {
+        !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 }

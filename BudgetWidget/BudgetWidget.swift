@@ -36,6 +36,9 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
         BudgetEntry(date: .now, remaining: 1500, monthlyBudget: 2000, quickIntent: configuration)
     }
 
+    /// Cached calendar instance for efficient date operations
+    private static let calendar = Calendar.current
+
     /// Creates a timeline of entries, determining when the widget should be updated.
     /// This function fetches the current budget settings and transactions from SwiftData to calculate the remaining budget.
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<BudgetEntry> {
@@ -46,13 +49,26 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
         let currentMonthTotal: Double
         let settings: BudgetSettings
 
-        // Fetch settings and calculate total expenses for the current month.
-        if let fetchedSettings = try? modelContext.fetch(FetchDescriptor<BudgetSettings>()).first {
+        // Calculate start of current month for predicate filtering
+        let now = Date()
+        let startOfMonth = Self.calendar.date(from: Self.calendar.dateComponents([.year, .month], from: now))!
+
+        // Fetch settings with limit for efficiency
+        var settingsDescriptor = FetchDescriptor<BudgetSettings>()
+        settingsDescriptor.fetchLimit = 1
+
+        if let fetchedSettings = try? modelContext.fetch(settingsDescriptor).first {
             settings = fetchedSettings
-            let transactions = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
-            currentMonthTotal = transactions
-                .filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
-                .reduce(0) { $0 + $1.amount }
+
+            // Use predicate to filter transactions at database level (much more efficient)
+            let predicate = #Predicate<Transaction> { transaction in
+                transaction.date >= startOfMonth
+            }
+            var transactionDescriptor = FetchDescriptor<Transaction>(predicate: predicate)
+            transactionDescriptor.propertiesToFetch = [\.amount]
+
+            let transactions = (try? modelContext.fetch(transactionDescriptor)) ?? []
+            currentMonthTotal = transactions.reduce(0) { $0 + $1.amount }
         } else {
             // Use default values if no data is available.
             settings = BudgetSettings()
@@ -61,7 +77,6 @@ struct BudgetWidgetProvider: AppIntentTimelineProvider {
 
         // Calculate the remaining budget.
         let remaining = settings.monthlyBudget - currentMonthTotal
-        let now = Date()
         let currentEntry = BudgetEntry(
             date: now,
             remaining: remaining,
@@ -112,9 +127,14 @@ struct BudgetWidgetView: View {
         self.entry = entry
     }
 
+    // MARK: - Cached Static Properties
+
+    /// Cached currency code to avoid repeated Locale.current access
+    private static let currencyCode: String = Locale.current.currency?.identifier ?? "USD"
+
     // MARK: - Calculated Properties
 
-    private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
+    private var currencyCode: String { Self.currencyCode }
     private var pendingAmount: Double { storedAmount }
     private var committedSpend: Double { max(entry.monthlyBudget - entry.remaining, 0) }
     private var totalAfterPending: Double { committedSpend + pendingAmount }
@@ -186,12 +206,11 @@ struct BudgetWidgetView: View {
         VStack(spacing: 6) {
             Text("Remaining")
                 .font(.system(.caption, design: .rounded).weight(.medium))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(Theme.secondaryLabel)
 
             Text(entry.remaining, format: .currency(code: currencyCode))
                 .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
+                .foregroundStyle(entry.remaining >= 0 ? Theme.primaryText : Theme.negativeTint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         }
@@ -297,12 +316,12 @@ struct BudgetWidgetView: View {
         HStack {
             Text("Monthly Budget")
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(Theme.primaryText)
             Spacer()
             Text(entry.monthlyBudget, format: .currency(code: currencyCode))
                 .font(.system(.caption, design: .rounded).monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondaryLabel)
         }
-        .foregroundStyle(.white)
     }
 
     private var budgetProgressSection: some View {
@@ -317,19 +336,20 @@ struct BudgetWidgetView: View {
                 let availableWidth = proxy.size.width
                 let committedWidth = availableWidth * committedRatio
                 let pendingWidth = availableWidth * pendingRatio
-                
+
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.black.opacity(0.2))
-                    
+                    // Track background matching main app
+                    Capsule().fill(Theme.primaryBlue.opacity(0.12))
+
                     if isOverBudget {
                         Capsule().fill(Theme.negativeGradient)
                     } else {
                         Capsule()
                             .fill(Theme.positiveGradient)
                             .frame(width: committedWidth)
-                        
+
                         Capsule()
-                            .fill(Theme.positiveGradient.opacity(0.5))
+                            .fill(Theme.primaryBlue.opacity(0.3))
                             .frame(width: pendingWidth)
                             .offset(x: committedWidth)
                     }
@@ -354,7 +374,7 @@ struct BudgetWidgetView: View {
                         .font(font)
                 }
             }
-            .foregroundStyle(.white.opacity(0.8))
+            .foregroundStyle(Theme.secondaryLabel)
         }
     }
 
@@ -362,44 +382,44 @@ struct BudgetWidgetView: View {
         HStack {
             Text("Remaining:")
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(Theme.primaryText)
             Spacer()
             if #available(iOS 17.0, *) {
                 Text(remainingAfterPending, format: .currency(code: currencyCode))
                     .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? .white : Theme.negativeTint)
+                    .foregroundStyle(remainingAfterPending >= 0 ? Theme.primaryText : Theme.negativeTint)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: remainingAfterPending)
             } else {
                 Text(remainingAfterPending, format: .currency(code: currencyCode))
                     .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? .white : Theme.negativeTint)
+                    .foregroundStyle(remainingAfterPending >= 0 ? Theme.primaryText : Theme.negativeTint)
             }
         }
-        .foregroundStyle(.white)
     }
 
     private var controlGrid: some View {
         VStack(spacing: 6) {
             HStack(spacing: 8) {
                 adjustmentStepperButton(delta: -1, systemImage: "minus")
-                
+
                 Text(pendingAmount, format: .currency(code: currencyCode))
                     .font(.system(.headline, design: .rounded).weight(.bold).monospacedDigit())
+                    .foregroundStyle(Theme.primaryText)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
-                    .background(.black.opacity(0.15), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                
+                    .background(Theme.border, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
                 adjustmentStepperButton(delta: 1, systemImage: "plus")
             }
-            
+
             presetIncrementGrid
-            
+
             HStack(spacing: 8) {
                 addButton
                 clearButton
             }
         }
-        .foregroundStyle(.white)
     }
 
     private var presetIncrementGrid: some View {
@@ -416,7 +436,6 @@ struct BudgetWidgetView: View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: intent) { label }
             .buttonStyle(GlassTileButtonStyle())
-            .simultaneousGesture(TapGesture().onEnded { adjustStoredAmount(by: delta) })
         } else {
             Button(action: { adjustStoredAmount(by: delta) }) { label }
             .buttonStyle(GlassTileButtonStyle())
@@ -431,7 +450,6 @@ struct BudgetWidgetView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(GlassButtonStyle(tint: .blue))
-            .simultaneousGesture(TapGesture().onEnded { storedAmount = 0 })
         }
     }
 
@@ -443,7 +461,6 @@ struct BudgetWidgetView: View {
                     .font(.system(.subheadline, design: .rounded).weight(.semibold))
             }
             .buttonStyle(GlassButtonStyle(tint: .gray))
-            .simultaneousGesture(TapGesture().onEnded { storedAmount = 0 })
         }
     }
 
@@ -455,7 +472,6 @@ struct BudgetWidgetView: View {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: intent) { label }
                 .buttonStyle(GlassCircleButtonStyle(tint: .gray))
-                .simultaneousGesture(TapGesture().onEnded { adjustStoredAmount(by: delta) })
         } else {
             Button(action: { adjustStoredAmount(by: delta) }) { label }
                 .buttonStyle(GlassCircleButtonStyle(tint: .gray))
@@ -512,32 +528,13 @@ struct BudgetWidgetView: View {
 
     private var glassBackground: some View {
         ZStack {
-            // Base aurora effect
-            Theme.backgroundGradient.opacity(0.8)
-            
-            // Blurred shapes for depth
-            Circle()
-                .fill(Theme.positiveTint.opacity(0.3))
-                .frame(width: 200, height: 200)
-                .offset(x: -100, y: -80)
-                .blur(radius: 80)
-            
-            Circle()
-                .fill(Theme.accentTint.opacity(0.4))
-                .frame(width: 150, height: 150)
-                .offset(x: 100, y: 50)
-                .blur(radius: 60)
-            
-            // Material layer for the "glass" effect
+            // Light background matching main app
+            Theme.pageBackground
+
+            // Subtle border
             RoundedRectangle(cornerRadius: 25, style: .continuous)
-                .fill(.ultraThinMaterial)
-            
-            // Border
-            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                .stroke(Theme.strokeGradient, lineWidth: 1.5)
+                .stroke(Theme.border, lineWidth: 1)
         }
-        .blendMode(.plusLighter) // Using blendMode can be heavy, but creates nice effects
-        .background(Theme.backgroundGradient)
         .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
     }
 
@@ -554,7 +551,6 @@ struct BudgetWidgetView: View {
                 Label("Add", systemImage: "plus")
             }
             .buttonStyle(GlassButtonStyle(tint: .blue))
-            .simultaneousGesture(TapGesture().onEnded { storedAmount = 0 })
         }
     }
 }
@@ -565,16 +561,15 @@ extension BudgetWidgetView {
         VStack(spacing: 6) {
             Text("Monthly Budget")
                 .font(.system(.footnote, design: .rounded).weight(.semibold))
+                .foregroundStyle(Theme.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            //Spacer()
             Text(entry.monthlyBudget, format: .currency(code: currencyCode))
                 .font(.system(.caption2, design: .rounded).monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondaryLabel)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .foregroundStyle(.white)
     }
 
     private var budgetProgressSectionCompact: some View {
@@ -594,7 +589,7 @@ extension BudgetWidgetView {
                 let pendingWidth = availableWidth * pendingRatio
 
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.black.opacity(0.2))
+                    Capsule().fill(Theme.primaryBlue.opacity(0.12))
                     if isOverBudget {
                         Capsule().fill(Theme.negativeGradient)
                     } else {
@@ -602,7 +597,7 @@ extension BudgetWidgetView {
                             .fill(Theme.positiveGradient)
                             .frame(width: committedWidth)
                         Capsule()
-                            .fill(Theme.positiveGradient.opacity(0.5))
+                            .fill(Theme.primaryBlue.opacity(0.3))
                             .frame(width: pendingWidth)
                             .offset(x: committedWidth)
                     }
@@ -625,14 +620,13 @@ extension BudgetWidgetView {
                         .font(font)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                   // Spacer(minLength: 4)
                     Text("Pending: \(pendingAmount, format: .currency(code: currencyCode))")
                         .font(font)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
             }
-            .foregroundStyle(.white.opacity(0.8))
+            .foregroundStyle(Theme.secondaryLabel)
         }
     }
 
@@ -640,11 +634,11 @@ extension BudgetWidgetView {
         VStack(spacing: 6) {
             Text("Remaining:")
                 .font(.system(.footnote, design: .rounded).weight(.semibold))
-            //Spacer()
+                .foregroundStyle(Theme.primaryText)
             if #available(iOS 17.0, *) {
                 Text(remainingAfterPending, format: .currency(code: currencyCode))
                     .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? .white : Theme.negativeTint)
+                    .foregroundStyle(remainingAfterPending >= 0 ? Theme.primaryText : Theme.negativeTint)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: remainingAfterPending)
                     .lineLimit(1)
@@ -652,35 +646,33 @@ extension BudgetWidgetView {
             } else {
                 Text(remainingAfterPending, format: .currency(code: currencyCode))
                     .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
-                    .foregroundStyle(remainingAfterPending >= 0 ? .white : Theme.negativeTint)
+                    .foregroundStyle(remainingAfterPending >= 0 ? Theme.primaryText : Theme.negativeTint)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
         }
-        .foregroundStyle(.white)
     }
 
     private var amountAdjustmentRow: some View {
         HStack(spacing: 4) {
             VStack {
-                centAdjustmentButton(delta: -0.05, tint: Theme.negativeTint)
-                centAdjustmentButton(delta: -0.25, tint: Theme.negativeTint)
-                
+                centAdjustmentButton(delta: -0.05, tint: Theme.secondaryLabel)
+                centAdjustmentButton(delta: -0.25, tint: Theme.secondaryLabel)
             }
 
             Text(pendingAmount, format: .currency(code: currencyCode))
                 .font(.system(.footnote, design: .rounded).weight(.bold).monospacedDigit())
+                .foregroundStyle(Theme.primaryText)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
-                .background(.black.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(Theme.border, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             VStack {
-                centAdjustmentButton(delta: 0.05, tint: Theme.positiveTint)
-                centAdjustmentButton(delta: 0.25, tint: Theme.positiveTint)
+                centAdjustmentButton(delta: 0.05, tint: Theme.primaryBlue)
+                centAdjustmentButton(delta: 0.25, tint: Theme.primaryBlue)
             }
         }
-        .foregroundStyle(.white)
     }
 
     private var presetIncrementGridCompact: some View {
@@ -700,7 +692,6 @@ extension BudgetWidgetView {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: intent) { label }
                 .buttonStyle(GlassTileButtonStyleCompact())
-                .simultaneousGesture(TapGesture().onEnded { adjustStoredAmount(by: delta) })
         } else {
             Button(action: { adjustStoredAmount(by: delta) }) { label }
                 .buttonStyle(GlassTileButtonStyleCompact())
@@ -715,7 +706,6 @@ extension BudgetWidgetView {
         if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             Button(intent: intent) { label }
                 .buttonStyle(SmallGlassPillButtonStyle(tint: tint))
-                .simultaneousGesture(TapGesture().onEnded { adjustStoredAmount(by: delta) })
         } else {
             Button(action: { adjustStoredAmount(by: delta) }) { label }
                 .buttonStyle(SmallGlassPillButtonStyle(tint: tint))
@@ -731,7 +721,6 @@ extension BudgetWidgetView {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(GlassButtonStyleCompact(tint: .blue))
-                .simultaneousGesture(TapGesture().onEnded { storedAmount = 0 })
 
                 Button(intent: ClearQuickAmountIntent()) {
                     Label("Clear", systemImage: "xmark")
@@ -739,49 +728,56 @@ extension BudgetWidgetView {
                         .font(.system(.footnote, design: .rounded).weight(.semibold))
                 }
                 .buttonStyle(GlassButtonStyleCompact(tint: .gray))
-                .simultaneousGesture(TapGesture().onEnded { storedAmount = 0 })
             }
         }
     }
 }
-// MARK: - UI Theme & Styles
+// MARK: - UI Theme & Styles (matching main app)
 
 fileprivate enum Theme {
-    static let accentTint = Color(red: 0.5, green: 0.2, blue: 1.0)
-    static let positiveTint = Color.green
-    static let negativeTint = Color(red: 1.0, green: 0.3, blue: 0.3)
-    
+    // Main app color palette
+    static let primaryBlue = Color(red: 0.25, green: 0.55, blue: 1.0)
+    static let primaryText = Color(red: 0.12, green: 0.14, blue: 0.2)
+    static let secondaryLabel = Color(red: 0.45, green: 0.5, blue: 0.58)
+    static let pageBackground = Color(red: 0.96, green: 0.97, blue: 0.99)
+    static let cardBackground = Color(red: 0.96, green: 0.97, blue: 0.99)
+    static let border = Color(red: 0.88, green: 0.91, blue: 0.96)
+    static let negativeTint = Color.red
+
+    // Unified with main app
+    static let accentTint = primaryBlue
+    static let positiveTint = primaryBlue
+
+    // Light background like main app
     static let backgroundGradient = LinearGradient(
-        colors: [Color(red: 0.1, green: 0.0, blue: 0.3), Color(red: 0.3, green: 0.1, blue: 0.4)],
+        colors: [pageBackground, pageBackground],
         startPoint: .topLeading, endPoint: .bottomTrailing
     )
+    // Progress bar gradient matching main app's dial
     static let positiveGradient = LinearGradient(
-        colors: [.cyan, .green], startPoint: .leading, endPoint: .trailing
+        colors: [primaryBlue.opacity(0.5), primaryBlue], startPoint: .leading, endPoint: .trailing
     )
     static let negativeGradient = LinearGradient(
-        colors: [.orange, .red], startPoint: .leading, endPoint: .trailing
+        colors: [Color.red.opacity(0.8), Color.red], startPoint: .leading, endPoint: .trailing
     )
     static let strokeGradient = LinearGradient(
-        colors: [.white.opacity(0.4), .white.opacity(0.1)],
+        colors: [border, border],
         startPoint: .topLeading, endPoint: .bottomTrailing
     )
 }
 
 fileprivate struct GlassButtonStyle: ButtonStyle {
-    var tint: Color = .accentColor
-    
+    var tint: Color = Theme.primaryBlue
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .foregroundStyle(.white)
             .padding(.vertical, 8)
             .frame(minWidth: 44)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(tint.opacity(configuration.isPressed ? 0.5 : 0.3))
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(tint, lineWidth: 1)
-                }
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(tint.opacity(configuration.isPressed ? 0.8 : 1.0))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
             )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -789,15 +785,15 @@ fileprivate struct GlassButtonStyle: ButtonStyle {
 }
 
 fileprivate struct GlassCircleButtonStyle: ButtonStyle {
-    var tint: Color = .gray
+    var tint: Color = Theme.secondaryLabel
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .foregroundStyle(Theme.primaryText)
             .frame(width: 36, height: 36)
             .background(
                 Circle()
-                    .fill(tint.opacity(configuration.isPressed ? 0.4 : 0.2))
-                    .overlay(Circle().stroke(tint.opacity(0.5), lineWidth: 1))
+                    .fill(Theme.border)
             )
             .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
@@ -808,11 +804,12 @@ fileprivate struct GlassTileButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(.caption, design: .rounded).weight(.semibold))
+            .foregroundStyle(Theme.primaryText)
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(.black.opacity(configuration.isPressed ? 0.3 : 0.15))
+                    .fill(Theme.border)
             )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
@@ -820,20 +817,17 @@ fileprivate struct GlassTileButtonStyle: ButtonStyle {
 }
 
 fileprivate struct GlassButtonStyleCompact: ButtonStyle {
-    var tint: Color = .accentColor
+    var tint: Color = Theme.primaryBlue
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .foregroundStyle(.white)
             .padding(.vertical, 6)
             .frame(minWidth: 36)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(tint.opacity(configuration.isPressed ? 0.5 : 0.3))
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(tint, lineWidth: 1)
-                }
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(tint.opacity(configuration.isPressed ? 0.8 : 1.0))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -841,15 +835,15 @@ fileprivate struct GlassButtonStyleCompact: ButtonStyle {
 }
 
 fileprivate struct GlassCircleButtonStyleCompact: ButtonStyle {
-    var tint: Color = .gray
+    var tint: Color = Theme.secondaryLabel
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .foregroundStyle(Theme.primaryText)
             .frame(width: 28, height: 28)
             .background(
                 Circle()
-                    .fill(tint.opacity(configuration.isPressed ? 0.4 : 0.2))
-                    .overlay(Circle().stroke(tint.opacity(0.5), lineWidth: 1))
+                    .fill(Theme.border)
             )
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
@@ -860,11 +854,12 @@ fileprivate struct GlassTileButtonStyleCompact: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(.caption2, design: .rounded).weight(.semibold))
+            .foregroundStyle(Theme.primaryText)
             .padding(.vertical, 4)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.black.opacity(configuration.isPressed ? 0.3 : 0.15))
+                    .fill(Theme.border)
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
@@ -877,14 +872,14 @@ fileprivate struct SmallGlassPillButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(.caption2, design: .rounded).weight(.bold))
+            .foregroundStyle(tint)
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .background(
                 Capsule()
-                    .fill(tint.opacity(configuration.isPressed ? 0.5 : 0.3))
-                    .overlay(Capsule().stroke(tint.opacity(0.5), lineWidth: 1))
+                    .fill(tint.opacity(0.1))
             )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)

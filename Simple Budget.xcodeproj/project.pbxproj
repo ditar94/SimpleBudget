@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3E4BED552EE6A9CE00236453 /* BudgetWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5731E98452C848BAA078261D /* BudgetWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3E8FA3272EEFC14800CF8F62 /* SimpleBudgetWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 3E8FA3072EEFC14700CF8F62 /* SimpleBudgetWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -17,6 +18,27 @@
 			proxyType = 1;
 			remoteGlobalIDString = 47C425F19DAC40479B33182B;
 			remoteInfo = BudgetWidget;
+		};
+		3E8FA3142EEFC14800CF8F62 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EC2C6202EDFC49C0068D990 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E8FA3062EEFC14700CF8F62;
+			remoteInfo = "SimpleBudgetWatch Watch App";
+		};
+		3E8FA31E2EEFC14800CF8F62 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EC2C6202EDFC49C0068D990 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E8FA3062EEFC14700CF8F62;
+			remoteInfo = "SimpleBudgetWatch Watch App";
+		};
+		3E8FA3252EEFC14800CF8F62 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3EC2C6202EDFC49C0068D990 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E8FA3062EEFC14700CF8F62;
+			remoteInfo = "SimpleBudgetWatch Watch App";
 		};
 		3EC2C63A2EDFC49C0068D990 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -35,6 +57,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		3E29E05E2EEFBE8600DF030C /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				3E8FA3272EEFC14800CF8F62 /* SimpleBudgetWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3E4BED582EE6A9CE00236453 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -49,6 +82,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3E8FA3072EEFC14700CF8F62 /* SimpleBudgetWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SimpleBudgetWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E8FA3132EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SimpleBudgetWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E8FA31D2EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SimpleBudgetWatch Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3EC2C6282EDFC49C0068D990 /* SimpleBudget Track Spending.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SimpleBudget Track Spending.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3EC2C6392EDFC49C0068D990 /* SimpleBudgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleBudgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleBudgetUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,6 +106,20 @@
 			);
 			target = 3EC2C6272EDFC49C0068D990 /* SimpleBudget Track Spending */;
 		};
+		3E8FA35B2EEFC27100CF8F62 /* Exceptions for "Shared" folder in "SimpleBudgetWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppGroupContainer.swift,
+				BudgetWidgetAmountStore.swift,
+				CrossProcessNotifier.swift,
+				Models/BudgetModels.swift,
+				Models/BudgetModelSchema.swift,
+				Models/Transaction.swift,
+				SharedIdentifiers.swift,
+				WidgetRefreshHelper.swift,
+			);
+			target = 3E8FA3062EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */;
+		};
 		3EC2C64B2EDFC49C0068D990 /* Exceptions for "SimpleBudget" folder in "SimpleBudget Track Spending" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -80,6 +130,21 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		3E8FA3082EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "SimpleBudgetWatch Watch App";
+			sourceTree = "<group>";
+		};
+		3E8FA3162EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "SimpleBudgetWatch Watch AppTests";
+			sourceTree = "<group>";
+		};
+		3E8FA3202EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "SimpleBudgetWatch Watch AppUITests";
+			sourceTree = "<group>";
+		};
 		3EC2C62A2EDFC49C0068D990 /* SimpleBudget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -100,6 +165,9 @@
 		};
 		65BEBC3EC9144DD4B05730B2 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3E8FA35B2EEFC27100CF8F62 /* Exceptions for "Shared" folder in "SimpleBudgetWatch Watch App" target */,
+			);
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -116,6 +184,27 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		22D2FBDA5F1A4DCE9F33DF03 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA3042EEFC14700CF8F62 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA3102EEFC14800CF8F62 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA31A2EEFC14800CF8F62 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -161,6 +250,9 @@
 				3EC2C62A2EDFC49C0068D990 /* SimpleBudget */,
 				3EC2C63C2EDFC49C0068D990 /* SimpleBudgetTests */,
 				3EC2C6462EDFC49C0068D990 /* SimpleBudgetUITests */,
+				3E8FA3082EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */,
+				3E8FA3162EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests */,
+				3E8FA3202EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests */,
 				3E8BE5172EE6A69B00A8F4BE /* Frameworks */,
 				3EC2C6292EDFC49C0068D990 /* Products */,
 			);
@@ -173,6 +265,9 @@
 				3EC2C6392EDFC49C0068D990 /* SimpleBudgetTests.xctest */,
 				3EC2C6432EDFC49C0068D990 /* SimpleBudgetUITests.xctest */,
 				5731E98452C848BAA078261D /* BudgetWidget.appex */,
+				3E8FA3072EEFC14700CF8F62 /* SimpleBudgetWatch Watch App.app */,
+				3E8FA3132EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests.xctest */,
+				3E8FA31D2EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -180,6 +275,74 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		3E8FA3062EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3E8FA3282EEFC14800CF8F62 /* Build configuration list for PBXNativeTarget "SimpleBudgetWatch Watch App" */;
+			buildPhases = (
+				3E8FA3032EEFC14700CF8F62 /* Sources */,
+				3E8FA3042EEFC14700CF8F62 /* Frameworks */,
+				3E8FA3052EEFC14700CF8F62 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3E8FA3082EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */,
+			);
+			name = "SimpleBudgetWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "SimpleBudgetWatch Watch App";
+			productReference = 3E8FA3072EEFC14700CF8F62 /* SimpleBudgetWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3E8FA3122EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3E8FA32B2EEFC14800CF8F62 /* Build configuration list for PBXNativeTarget "SimpleBudgetWatch Watch AppTests" */;
+			buildPhases = (
+				3E8FA30F2EEFC14800CF8F62 /* Sources */,
+				3E8FA3102EEFC14800CF8F62 /* Frameworks */,
+				3E8FA3112EEFC14800CF8F62 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3E8FA3152EEFC14800CF8F62 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3E8FA3162EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests */,
+			);
+			name = "SimpleBudgetWatch Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "SimpleBudgetWatch Watch AppTests";
+			productReference = 3E8FA3132EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3E8FA31C2EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3E8FA32E2EEFC14800CF8F62 /* Build configuration list for PBXNativeTarget "SimpleBudgetWatch Watch AppUITests" */;
+			buildPhases = (
+				3E8FA3192EEFC14800CF8F62 /* Sources */,
+				3E8FA31A2EEFC14800CF8F62 /* Frameworks */,
+				3E8FA31B2EEFC14800CF8F62 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3E8FA31F2EEFC14800CF8F62 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3E8FA3202EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests */,
+			);
+			name = "SimpleBudgetWatch Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "SimpleBudgetWatch Watch AppUITests";
+			productReference = 3E8FA31D2EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		3EC2C6272EDFC49C0068D990 /* SimpleBudget Track Spending */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3EC2C64C2EDFC49C0068D990 /* Build configuration list for PBXNativeTarget "SimpleBudget Track Spending" */;
@@ -188,11 +351,13 @@
 				3EC2C6252EDFC49C0068D990 /* Frameworks */,
 				3EC2C6262EDFC49C0068D990 /* Resources */,
 				3E4BED582EE6A9CE00236453 /* Embed Foundation Extensions */,
+				3E29E05E2EEFBE8600DF030C /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				3E4BED572EE6A9CE00236453 /* PBXTargetDependency */,
+				3E8FA3262EEFC14800CF8F62 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3EC2C62A2EDFC49C0068D990 /* SimpleBudget */,
@@ -284,6 +449,17 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					3E8FA3062EEFC14700CF8F62 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					3E8FA3122EEFC14800CF8F62 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 3E8FA3062EEFC14700CF8F62;
+					};
+					3E8FA31C2EEFC14800CF8F62 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 3E8FA3062EEFC14700CF8F62;
+					};
 					3EC2C6272EDFC49C0068D990 = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
@@ -318,11 +494,35 @@
 				3EC2C6382EDFC49C0068D990 /* SimpleBudgetTests */,
 				3EC2C6422EDFC49C0068D990 /* SimpleBudgetUITests */,
 				47C425F19DAC40479B33182B /* BudgetWidget */,
+				3E8FA3062EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */,
+				3E8FA3122EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppTests */,
+				3E8FA31C2EEFC14800CF8F62 /* SimpleBudgetWatch Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3E8FA3052EEFC14700CF8F62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA3112EEFC14800CF8F62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA31B2EEFC14800CF8F62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3EC2C6262EDFC49C0068D990 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -354,6 +554,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3E8FA3032EEFC14700CF8F62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA30F2EEFC14800CF8F62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E8FA3192EEFC14800CF8F62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3EC2C6242EDFC49C0068D990 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -389,6 +610,21 @@
 			isa = PBXTargetDependency;
 			target = 47C425F19DAC40479B33182B /* BudgetWidget */;
 			targetProxy = 3E4BED562EE6A9CE00236453 /* PBXContainerItemProxy */;
+		};
+		3E8FA3152EEFC14800CF8F62 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3E8FA3062EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */;
+			targetProxy = 3E8FA3142EEFC14800CF8F62 /* PBXContainerItemProxy */;
+		};
+		3E8FA31F2EEFC14800CF8F62 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3E8FA3062EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */;
+			targetProxy = 3E8FA31E2EEFC14800CF8F62 /* PBXContainerItemProxy */;
+		};
+		3E8FA3262EEFC14800CF8F62 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3E8FA3062EEFC14700CF8F62 /* SimpleBudgetWatch Watch App */;
+			targetProxy = 3E8FA3252EEFC14800CF8F62 /* PBXContainerItemProxy */;
 		};
 		3EC2C63B2EDFC49C0068D990 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -432,6 +668,167 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
+			};
+			name = Release;
+		};
+		3E8FA3292EEFC14800CF8F62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "SimpleBudgetWatch Watch App/SimpleBudgetWatch.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SimpleBudgetWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = WhiteSnek.SimpleBudget;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WhiteSnek.SimpleBudget.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		3E8FA32A2EEFC14800CF8F62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "SimpleBudgetWatch Watch App/SimpleBudgetWatch.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SimpleBudgetWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = WhiteSnek.SimpleBudget;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WhiteSnek.SimpleBudget.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
+		3E8FA32C2EEFC14800CF8F62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "WhiteSnek.SimpleBudgetWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleBudgetWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleBudgetWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		3E8FA32D2EEFC14800CF8F62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "WhiteSnek.SimpleBudgetWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleBudgetWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimpleBudgetWatch Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
+		3E8FA32F2EEFC14800CF8F62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "WhiteSnek.SimpleBudgetWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "SimpleBudgetWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		3E8FA3302EEFC14800CF8F62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNVPPRJ99U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "WhiteSnek.SimpleBudgetWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "SimpleBudgetWatch Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Release;
 		};
@@ -786,6 +1183,33 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3E8FA3282EEFC14800CF8F62 /* Build configuration list for PBXNativeTarget "SimpleBudgetWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3E8FA3292EEFC14800CF8F62 /* Debug */,
+				3E8FA32A2EEFC14800CF8F62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3E8FA32B2EEFC14800CF8F62 /* Build configuration list for PBXNativeTarget "SimpleBudgetWatch Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3E8FA32C2EEFC14800CF8F62 /* Debug */,
+				3E8FA32D2EEFC14800CF8F62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3E8FA32E2EEFC14800CF8F62 /* Build configuration list for PBXNativeTarget "SimpleBudgetWatch Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3E8FA32F2EEFC14800CF8F62 /* Debug */,
+				3E8FA3302EEFC14800CF8F62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		3EC2C6232EDFC49C0068D990 /* Build configuration list for PBXProject "Simple Budget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

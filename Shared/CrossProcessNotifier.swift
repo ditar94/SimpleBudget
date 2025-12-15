@@ -6,13 +6,18 @@ enum CrossProcessNotifier {
     static let darwinNotificationName = CFNotificationName("com.whitesnek.simplebudget.datastore.changed" as CFString)
     static let versionDefaultsKey = "datastore_change_version"
 
-    static var sharedDefaults: UserDefaults { AppGroupContainer.sharedDefaults }
+    private static var sharedDefaults: UserDefaults { AppGroupContainer.sharedDefaults }
+
+    /// Serial queue for thread-safe token operations
+    private static let tokenQueue = DispatchQueue(label: "com.whitesnek.simplebudget.notifier.token")
 
     /// Broadcasts a change signal to all processes sharing the app group.
     static func signalDataChange() {
-        let token = Date().timeIntervalSince1970
-        sharedDefaults.set(token, forKey: versionDefaultsKey)
-        sharedDefaults.synchronize()
+        tokenQueue.sync {
+            let token = Date().timeIntervalSince1970
+            sharedDefaults.set(token, forKey: versionDefaultsKey)
+            // Note: synchronize() is deprecated and unnecessary - UserDefaults auto-syncs
+        }
 
         let center = CFNotificationCenterGetDarwinNotifyCenter()
         CFNotificationCenterPostNotification(center, darwinNotificationName, nil, nil, true)
@@ -20,7 +25,9 @@ enum CrossProcessNotifier {
 
     /// Reads the last published change token from the shared defaults.
     static func latestChangeToken() -> TimeInterval? {
-        sharedDefaults.object(forKey: versionDefaultsKey) as? TimeInterval
+        tokenQueue.sync {
+            sharedDefaults.object(forKey: versionDefaultsKey) as? TimeInterval
+        }
     }
 }
 
@@ -29,6 +36,7 @@ enum CrossProcessNotifier {
 final class DarwinNotificationObserver {
     private let name: CFNotificationName
     private let handler: @MainActor () -> Void
+    private let lock = NSLock()
     private var isObserving = false
 
     init(name: CFNotificationName, handler: @escaping @MainActor () -> Void) {
@@ -37,6 +45,9 @@ final class DarwinNotificationObserver {
     }
 
     func start() {
+        lock.lock()
+        defer { lock.unlock() }
+
         guard !isObserving else { return }
         let center = CFNotificationCenterGetDarwinNotifyCenter()
 
@@ -52,6 +63,9 @@ final class DarwinNotificationObserver {
     }
 
     func stop() {
+        lock.lock()
+        defer { lock.unlock() }
+
         guard isObserving else { return }
         let center = CFNotificationCenterGetDarwinNotifyCenter()
         CFNotificationCenterRemoveObserver(center, Unmanaged.passUnretained(self).toOpaque(), name, nil)

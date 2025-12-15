@@ -19,6 +19,27 @@ private extension Color {
     static let border = Color(red: 0.88, green: 0.91, blue: 0.96)
 }
 
+// MARK: - Cached Global Properties for Efficiency
+
+/// Cached calendar instance to avoid repeated Calendar.current access
+private let cachedCalendar = Calendar.current
+
+/// Cached currency code to avoid repeated Locale.current access
+private let cachedCurrencyCode = Locale.current.currency?.identifier ?? "USD"
+
+/// Cached currency symbol to avoid repeated Locale.current access
+private let cachedCurrencySymbol = Locale.current.currencySymbol ?? "$"
+
+/// Cached number formatter for amount parsing/formatting
+private let cachedNumberFormatter: NumberFormatter = {
+    let formatter = NumberFormatter()
+    formatter.maximumFractionDigits = 2
+    formatter.minimumFractionDigits = 0
+    formatter.locale = Locale.current
+    formatter.numberStyle = .decimal
+    return formatter
+}()
+
 // Root tab view orchestrating expense entry, history, and settings
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -257,7 +278,7 @@ private struct AddExpenseTab: View {
     private enum Field: Hashable { case note}
 
     private var currentMonthTotal: Double {
-        transactions.filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
+        transactions.filter { cachedCalendar.isDate($0.date, equalTo: .now, toGranularity: .month) }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -272,7 +293,7 @@ private struct AddExpenseTab: View {
                     remainingBudget: remainingBudget,
                     monthlyBudget: settings.monthlyBudget,
                     currentSpent: currentMonthTotal,
-                    currencyCode: Locale.current.currency?.identifier ?? "USD",
+                    currencyCode: cachedCurrencyCode,
                     draft: $draft
                 )
 
@@ -504,9 +525,8 @@ private struct BudgetDial: View {
     private var projectedTotal: Double { currentSpent + amount }
     private var remainingAfterSelection: Double { max(monthlyBudget - projectedTotal, 0) }
     private var remainingDaysInMonth: Int {
-        let calendar = Calendar.current
-        let today = calendar.component(.day, from: .now)
-        let daysInMonth = calendar.range(of: .day, in: .month, for: .now)?.count ?? today
+        let today = cachedCalendar.component(.day, from: .now)
+        let daysInMonth = cachedCalendar.range(of: .day, in: .month, for: .now)?.count ?? today
         return max(daysInMonth - today + 1, 1)
     }
     private var perDayAllowance: Double {
@@ -884,24 +904,13 @@ struct TransactionDraft {
     var note: String = ""
 
     var amount: Double {
-        let formatter = TransactionDraft.makeNumberFormatter()
         let trimmed = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return formatter.number(from: trimmed)?.doubleValue ?? 0
+        return cachedNumberFormatter.number(from: trimmed)?.doubleValue ?? 0
     }
     var isValid: Bool { amount > 0 && !category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     mutating func setAmount(_ value: Double) {
-        let formatter = TransactionDraft.makeNumberFormatter()
-        amountText = formatter.string(from: NSNumber(value: max(0, value))) ?? ""
-    }
-
-    private static func makeNumberFormatter() -> NumberFormatter {
-        let formatter = NumberFormatter()
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 0
-        formatter.locale = Locale.current
-        formatter.numberStyle = .decimal
-        return formatter
+        amountText = cachedNumberFormatter.string(from: NSNumber(value: max(0, value))) ?? ""
     }
 }
 
@@ -915,7 +924,7 @@ private struct MonthlyExpensesTab: View {
     var onDelete: (Transaction) -> Void
 
     private var monthTransactions: [Transaction] {
-        transactions.filter { Calendar.current.isDate($0.date, equalTo: selectedMonth, toGranularity: .month) }
+        transactions.filter { cachedCalendar.isDate($0.date, equalTo: selectedMonth, toGranularity: .month) }
     }
 
     private var monthTotal: Double {
@@ -998,7 +1007,7 @@ struct MonthSummaryCard: View {
                     Text("Total spent")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.75))
-                    Text(spent, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    Text(spent, format: .currency(code: cachedCurrencyCode))
                         .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
@@ -1009,7 +1018,7 @@ struct MonthSummaryCard: View {
                     Text("Monthly limit")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.8))
-                    Text(limit, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    Text(limit, format: .currency(code: cachedCurrencyCode))
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
 
@@ -1020,7 +1029,7 @@ struct MonthSummaryCard: View {
                     Text(remaining >= 0 ? "Remaining" : "Over")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.8))
-                    Text(abs(remaining), format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    Text(abs(remaining), format: .currency(code: cachedCurrencyCode))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(remaining >= 0 ? .white : .red.opacity(0.9))
                 }
@@ -1069,7 +1078,7 @@ private struct MonthSelector: View {
         HStack(spacing: 12) {
             Button {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: selectedMonth) ?? selectedMonth
+                    selectedMonth = cachedCalendar.date(byAdding: .month, value: -1, to: selectedMonth) ?? selectedMonth
                 }
             } label: {
                 Image(systemName: "chevron.left")
@@ -1090,7 +1099,7 @@ private struct MonthSelector: View {
 
             Button {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth) ?? selectedMonth
+                    selectedMonth = cachedCalendar.date(byAdding: .month, value: 1, to: selectedMonth) ?? selectedMonth
                 }
             } label: {
                 Image(systemName: "chevron.right")
@@ -1216,17 +1225,17 @@ private struct TransactionCard: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? transaction.category : transaction.title)
+                Text(transaction.displayTitle)
                     .font(.headline)
                     .lineLimit(1)
 
-                if !transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if transaction.hasTitle {
                     Text(transaction.category)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
 
-                if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if transaction.hasNotes {
                     Text(transaction.notes)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
@@ -1240,7 +1249,7 @@ private struct TransactionCard: View {
 
             Spacer()
 
-            Text(-transaction.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            Text(-transaction.amount, format: .currency(code: cachedCurrencyCode))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Color(red: 0.91, green: 0.24, blue: 0.36))
         }
@@ -1250,7 +1259,6 @@ private struct TransactionCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.systemBackground))
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 6)
     }
 }
 
@@ -1284,7 +1292,7 @@ private struct SettingsTab: View {
         }
     }
 
-    private var currencySymbol: String { Locale.current.currencySymbol ?? "$" }
+    private var currencySymbol: String { cachedCurrencySymbol }
 
     private var budgetCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1441,14 +1449,14 @@ private struct TransactionRow: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? transaction.category : transaction.title)
+                Text(transaction.displayTitle)
                     .font(.headline)
-                if !transaction.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if transaction.hasTitle {
                     Text(transaction.category)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if !transaction.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if transaction.hasNotes {
                     Text(transaction.notes)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -1458,7 +1466,7 @@ private struct TransactionRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(-transaction.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                Text(-transaction.amount, format: .currency(code: cachedCurrencyCode))
                     .font(.headline)
                     .foregroundStyle(.red)
                 Text(transaction.date, style: .date)
