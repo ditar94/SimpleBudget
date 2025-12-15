@@ -23,9 +23,9 @@ struct BudgetOverviewView: View {
     private let calendar = Calendar.current
     private let currencyCode = Locale.current.currency?.identifier ?? "USD"
 
-    // Velocity thresholds for step size selection
-    private let fastScrollThreshold: Double = 15.0  // rotations per second
-    private let mediumScrollThreshold: Double = 5.0
+    // Velocity thresholds for step size selection (lower = more responsive)
+    private let fastScrollThreshold: Double = 8.0   // rotations per second
+    private let mediumScrollThreshold: Double = 3.0
 
     // MARK: - Computed Properties
 
@@ -51,18 +51,27 @@ struct BudgetOverviewView: View {
         projectedRemaining < 0
     }
 
+    /// Base progress showing committed spending (what's already spent)
+    private var baseProgress: Double {
+        guard settings.monthlyBudget > 0 else { return 0 }
+        return min(monthlySpent / settings.monthlyBudget, 1.0)
+    }
+
+    /// Ring progress showing total spending (committed + pending selection)
     private var ringProgress: Double {
         if wouldGoOverBudget || isOverBudget {
             return 1.0
         }
-        guard remainingBudget > 0 else { return 1.0 }
-        return min(selectedAmount / remainingBudget, 1.0)
+        guard settings.monthlyBudget > 0 else { return 1.0 }
+        return min((monthlySpent + selectedAmount) / settings.monthlyBudget, 1.0)
     }
 
+    /// Indicator shows where pending amount would land on the progress bar
     private var indicatorProgress: Double {
+        // Only show indicator when user is entering an amount
         guard selectedAmount > 0 else { return 0 }
         if wouldGoOverBudget {
-            let overAmount = selectedAmount - max(remainingBudget, 0)
+            let overAmount = (monthlySpent + selectedAmount) - settings.monthlyBudget
             let progress = overAmount.truncatingRemainder(dividingBy: 500) / 500
             return progress == 0 && overAmount > 0 ? 1.0 : progress
         } else {
@@ -84,7 +93,8 @@ struct BudgetOverviewView: View {
 
                 // Perimeter progress bar
                 PerimeterProgressBar(
-                    progress: ringProgress,
+                    committedProgress: baseProgress,
+                    totalProgress: ringProgress,
                     isOverBudget: wouldGoOverBudget || isOverBudget,
                     indicatorProgress: indicatorProgress
                 )
@@ -160,14 +170,14 @@ struct BudgetOverviewView: View {
         // Determine step size based on velocity
         let stepSize: Double
         if velocity > fastScrollThreshold {
-            // Fast scrolling: $1.00 increments
-            stepSize = 1.0
+            // Fast scrolling: $5.00 increments
+            stepSize = 5.0
         } else if velocity > mediumScrollThreshold {
-            // Medium scrolling: $0.25 increments
-            stepSize = 0.25
+            // Medium scrolling: $1.00 increments
+            stepSize = 1.0
         } else {
-            // Slow/precise scrolling: $0.01 increments
-            stepSize = 0.01
+            // Slow/precise scrolling: $0.05 increments
+            stepSize = 0.05
         }
 
         // Calculate direction and apply step

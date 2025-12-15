@@ -3,7 +3,8 @@ import SwiftUI
 /// A rounded rectangle progress bar that hugs the watch screen perimeter.
 /// Matches main app's dial styling with primaryBlue color scheme.
 struct PerimeterProgressBar: View {
-    let progress: Double
+    let committedProgress: Double  // Already spent (darker blue)
+    let totalProgress: Double       // Total including pending (lighter blue for pending portion)
     let isOverBudget: Bool
     let indicatorProgress: Double
 
@@ -29,7 +30,7 @@ struct PerimeterProgressBar: View {
                     )
                     .padding(inset)
 
-                // Main progress stroke (no glow)
+                // Main progress stroke
                 if isOverBudget {
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .stroke(
@@ -37,14 +38,28 @@ struct PerimeterProgressBar: View {
                             style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                         )
                         .padding(inset)
-                } else if progress > 0 {
-                    PerimeterShape(cornerRadius: cornerRadius, progress: min(max(progress, 0), 1))
-                        .stroke(
-                            progressGradient,
-                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                        )
-                        .padding(inset)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: progress)
+                } else {
+                    // Committed spending arc (darker blue)
+                    if committedProgress > 0 {
+                        PerimeterShape(cornerRadius: cornerRadius, progress: min(max(committedProgress, 0), 1))
+                            .stroke(
+                                Self.primaryBlue,
+                                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                            )
+                            .padding(inset)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: committedProgress)
+                    }
+
+                    // Pending spending arc (lighter blue)
+                    if totalProgress > committedProgress {
+                        PerimeterShape(cornerRadius: cornerRadius, startProgress: committedProgress, endProgress: min(max(totalProgress, 0), 1))
+                            .stroke(
+                                Self.primaryBlue.opacity(0.4),
+                                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                            )
+                            .padding(inset)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: totalProgress)
+                    }
                 }
 
                 // Indicator dot (no glow)
@@ -65,15 +80,6 @@ struct PerimeterProgressBar: View {
     // Color palette matching main app exactly
     private static let primaryBlue = Color(red: 0.25, green: 0.55, blue: 1.0)
     private static let primaryText = Color(red: 0.12, green: 0.14, blue: 0.2)
-
-    // Gradient matching main app's angular gradient on the dial
-    private var progressGradient: LinearGradient {
-        LinearGradient(
-            colors: [Self.primaryBlue.opacity(0.3), Self.primaryBlue],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
 }
 
 // MARK: - Indicator Dot
@@ -182,16 +188,34 @@ struct PerimeterIndicator: View {
 
 struct PerimeterShape: Shape {
     let cornerRadius: CGFloat
-    var progress: Double
+    var startProgress: Double
+    var endProgress: Double
 
-    var animatableData: Double {
-        get { progress }
-        set { progress = newValue }
+    // Convenience initializer for single progress (from 0 to progress)
+    init(cornerRadius: CGFloat, progress: Double) {
+        self.cornerRadius = cornerRadius
+        self.startProgress = 0
+        self.endProgress = progress
+    }
+
+    // Full initializer for partial arcs
+    init(cornerRadius: CGFloat, startProgress: Double, endProgress: Double) {
+        self.cornerRadius = cornerRadius
+        self.startProgress = startProgress
+        self.endProgress = endProgress
+    }
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(startProgress, endProgress) }
+        set {
+            startProgress = newValue.first
+            endProgress = newValue.second
+        }
     }
 
     func path(in rect: CGRect) -> Path {
         let fullPath = createRoundedRectPath(in: rect)
-        return fullPath.trimmedPath(from: 0, to: progress)
+        return fullPath.trimmedPath(from: startProgress, to: endProgress)
     }
 
     private func createRoundedRectPath(in rect: CGRect) -> Path {
@@ -246,6 +270,6 @@ struct PerimeterShape: Shape {
 #Preview {
     ZStack {
         Color(red: 0.96, green: 0.97, blue: 0.99)
-        PerimeterProgressBar(progress: 0.6, isOverBudget: false, indicatorProgress: 0.6)
+        PerimeterProgressBar(committedProgress: 0.4, totalProgress: 0.6, isOverBudget: false, indicatorProgress: 0.6)
     }
 }

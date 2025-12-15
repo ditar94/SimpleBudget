@@ -362,7 +362,8 @@ private struct AddExpenseTab: View {
     }
 }
 
-// Card wrapping the dial and header for selecting expense amounts
+// Card with rounded rectangle perimeter progress bar (matching watch app design)
+// Supports drag gesture around the perimeter to adjust amount
 private struct ExpenseDialCard: View {
     let remainingBudget: Double
     let monthlyBudget: Double
@@ -370,372 +371,551 @@ private struct ExpenseDialCard: View {
     let currencyCode: String
     @Binding var draft: TransactionDraft
 
-    private var amountBinding: Binding<Double> {
-        Binding(
-            get: { draft.amount },
-            set: { newValue in
-                draft.setAmount(newValue)
-            }
-        )
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("New Expense")
-                        .font(.system(size: 25, weight: .semibold))
-//                    Text("Drag around the dial to fine-tune your spend.")
-//                        .font(.system(size: 13))
-//                        .foregroundStyle(Color.secondaryLabel)
-                }
-                Spacer()
-                Text(Date.now, format: Date.FormatStyle().month(.abbreviated).year())
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.primaryBlue)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.primaryBlue.opacity(0.12))
-                    )
-            }
-            
-
-            BudgetDial(
-                amount: amountBinding,
-                remainingBudget: remainingBudget,
-                monthlyBudget: monthlyBudget,
-                currentSpent: currentSpent,
-                currencyCode: currencyCode
-            )
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.cardBackground)
-        )
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 20, style: .continuous)
-//                .stroke(Color.border, lineWidth: 1)
-//        )
-    }
-}
-
-// Computes the smallest directional difference between two angles in degrees
-func smallestSignedAngleDelta(from previous: Double, to current: Double) -> Double {
-    let rawDelta = current - previous
-    let wrapped = ((rawDelta + 180).truncatingRemainder(dividingBy: 360) + 360)
-        .truncatingRemainder(dividingBy: 360)
-    return wrapped - 180
-}
-
-/// Extracted scaling math for the budget dial so it can be validated in tests.
-struct BudgetDialScalingMetrics {
-    let amount: Double
-    let remainingBudget: Double
-    let monthlyBudget: Double
-    let currentSpent: Double
-
-    private let overBudgetRange: Double = 500
-
-    private var remainingRange: Double {
-        guard monthlyBudget > 0 else { return max(remainingBudget, 0) }
-
-        if shouldCapRange {
-            return max(min(remainingBudget, monthlyBudget), 0)
-        }
-
-        return max(remainingBudget, 0)
-    }
-
-    private var projectedTotal: Double { currentSpent + amount }
-
-    private var shouldCapRange: Bool {
-        guard monthlyBudget > 0 else { return false }
-        return remainingBudget > monthlyBudget
-            || currentSpent > monthlyBudget
-            || projectedTotal > monthlyBudget
-    }
-
-    var dialRange: Double { remainingRange + overBudgetRange }
-
-    func progress(for selection: Double) -> Double {
-        let selection = max(selection, 0)
-
-        guard remainingRange > 0 else {
-            return 1 + selection / overBudgetRange
-        }
-
-        if selection <= remainingRange {
-            return selection / remainingRange
-        }
-
-        return 1 + (selection - remainingRange) / overBudgetRange
-    }
-
-    func amount(for progress: Double) -> Double {
-        let progress = max(progress, 0)
-
-        guard remainingRange > 0 else {
-            return max(0, (progress - 1) * overBudgetRange)
-        }
-
-        if progress <= 1 {
-            return progress * remainingRange
-        }
-
-        return remainingRange + max(0, (progress - 1) * overBudgetRange)
-    }
-
-    var normalizedProgress: Double { progress(for: amount) }
-
-    var primaryTrim: Double { min(normalizedProgress, 1) }
-
-    var knobRotationProgress: Double { normalizedProgress }
-}
-
-// Interactive radial dial used to adjust the expense amount
-private struct BudgetDial: View {
-    @Binding var amount: Double
-    let remainingBudget: Double
-    let monthlyBudget: Double
-    let currentSpent: Double
-    let currencyCode: String
-
-    @GestureState private var isDragging = false
-    @State private var initialProgress: Double = 0
-    @State private var progressDelta: Double = 0
+    // Drag gesture state
     @State private var previousAngle: Double?
+    @State private var accumulatedRotation: Double = 0  // Total rotation in radians
 
-    private var scaling: BudgetDialScalingMetrics {
-        BudgetDialScalingMetrics(
-            amount: amount,
-            remainingBudget: remainingBudget,
-            monthlyBudget: monthlyBudget,
-            currentSpent: currentSpent
-        )
+    // Watch app dimensions: 184x224 points, cornerRadius: 54, lineWidth: 6
+    // Using width as base for ratios
+    private static let watchWidth: CGFloat = 184
+    private static let watchHeight: CGFloat = 224
+    private static let watchAspectRatio: CGFloat = watchWidth / watchHeight  // ~0.82
+    private let cornerRadiusRatio: CGFloat = 54 / ExpenseDialCard.watchWidth  // ~0.29
+    private let lineWidthRatio: CGFloat = 6 / ExpenseDialCard.watchWidth      // ~0.033
+
+    // Computed properties matching watch app
+    private var selectedAmount: Double { draft.amount }
+    private var projectedRemaining: Double { remainingBudget - selectedAmount }
+    private var isOverBudget: Bool { currentSpent >= monthlyBudget }
+    private var wouldGoOverBudget: Bool { projectedRemaining < 0 }
+
+    // Amount range for drag - one full rotation = this amount
+    private var dialRange: Double {
+        let baseRange = max(remainingBudget, 0)
+        let overBudgetRange: Double = 500
+        return baseRange + overBudgetRange
     }
 
-    private var dialRange: Double { scaling.dialRange }
-    private var normalizedProgress: Double { scaling.normalizedProgress }
-    private var primaryTrim: Double { scaling.primaryTrim }
-    private var knobRotationProgress: Double { scaling.knobRotationProgress }
-    private var notZero: Bool { amount > 0 }
-    private var projectedTotal: Double { currentSpent + amount }
-    private var remainingAfterSelection: Double { max(monthlyBudget - projectedTotal, 0) }
-    private var remainingDaysInMonth: Int {
-        let today = cachedCalendar.component(.day, from: .now)
-        let daysInMonth = cachedCalendar.range(of: .day, in: .month, for: .now)?.count ?? today
-        return max(daysInMonth - today + 1, 1)
+    private var committedProgress: Double {
+        guard monthlyBudget > 0 else { return 0 }
+        return min(currentSpent / monthlyBudget, 1.0)
     }
-    private var perDayAllowance: Double {
-        guard remainingDaysInMonth > 0 else { return 0 }
-        return remainingAfterSelection / Double(remainingDaysInMonth)
+
+    private var totalProgress: Double {
+        guard monthlyBudget > 0 else { return 0 }
+        return min((currentSpent + selectedAmount) / monthlyBudget, 1.0)
     }
-    private var isMonthOverBudget: Bool { monthlyBudget > 0 && currentSpent >= monthlyBudget }
-    private var isProjectedOverBudget: Bool { monthlyBudget > 0 && projectedTotal >= monthlyBudget }
-    private var overageAmount: Double { max(projectedTotal - monthlyBudget, 0) }
-    private var statusText: String {
-        if isMonthOverBudget || isProjectedOverBudget {
-            return "⚠️ Over by \(overageAmount.formatted(.currency(code: currencyCode)))"
-        } else if isDragging {
-            return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
+
+    // The indicator is ALWAYS at the edge of the pending amount bar
+    // When over budget, it keeps moving (wraps every $500 over)
+    private var indicatorProgress: Double {
+        guard selectedAmount > 0 else { return 0 }
+
+        let totalSpending = currentSpent + selectedAmount
+
+        if totalSpending <= monthlyBudget {
+            // Under budget: dot is at the edge of the pending bar
+            return totalProgress
+        } else {
+            // Over budget: dot keeps moving based on amount over
+            // Every $500 over = one full rotation around the perimeter
+            let overAmount = totalSpending - monthlyBudget
+            let wrapAmount: Double = 500
+            let progress = (overAmount.truncatingRemainder(dividingBy: wrapAmount)) / wrapAmount
+            // If exactly at a multiple of 500, show full (1.0) not zero
+            return (progress == 0 && overAmount > 0) ? 1.0 : progress
         }
-
-        return "Remaining \(remainingAfterSelection.formatted(.currency(code: currencyCode)))"
     }
-    private var statusBackground: Color {
-        if isMonthOverBudget || isProjectedOverBudget {
-            return Color.red.opacity(0.12)
-        } else if isDragging {
-            return Color.blue.opacity(0.12)
-        }
-        return Color.gray.opacity(0.12)
-    }
-    private var statusForeground: Color {
-        if isMonthOverBudget || isProjectedOverBudget {
-            return .red
-        } else if isDragging {
-            return .blue
-        }
-        return Color.gray
-    }
-
-    private let maxDialDiameter: CGFloat = 360
 
     var body: some View {
-        VStack(spacing: 6) {
-            GeometryReader { proxy in
-                let ringWidth: CGFloat = 18
-                let availableWidth = proxy.size.width
+        GeometryReader { geometry in
+            // Calculate the frame size maintaining watch aspect ratio
+            let availableWidth = geometry.size.width
+            let availableHeight = geometry.size.height
 
-                let dialSize = max(min(availableWidth, maxDialDiameter), ringWidth)
+            // Use ternary to compute target dimensions based on aspect ratio
+            let constrainByHeight = availableWidth / availableHeight > Self.watchAspectRatio
+            let targetHeight = constrainByHeight ? availableHeight : availableWidth / Self.watchAspectRatio
+            let targetWidth = constrainByHeight ? targetHeight * Self.watchAspectRatio : availableWidth
 
-                if availableWidth.isFinite && availableWidth >= ringWidth {
-                    let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
-                    let ringRadius = max(dialSize / 2 - ringWidth / 2, 0)
-                    let endAngle = Angle(degrees: knobRotationProgress * 360 - 90)
-                    let endPoint = CGPoint(
-                        x: center.x + cos(CGFloat(endAngle.radians)) * ringRadius,
-                        y: center.y + sin(CGFloat(endAngle.radians)) * ringRadius
-                    )
-                    let dragGesture = DragGesture(minimumDistance: 0, coordinateSpace: .named("dial"))
-                        .updating($isDragging) { _, state, _ in
-                            state = true
-                        }
-                        .onChanged { value in
-                            updateAmount(from: value.location, in: CGSize(width: dialSize, height: dialSize))
-                        }
-                        .onEnded { _ in
-                            resetDragState()
-                        }
+            // Center the perimeter bar in available space
+            let xOffset = (availableWidth - targetWidth) / 2
+            let yOffset = (availableHeight - targetHeight) / 2
 
-                    ZStack {
-                        if isMonthOverBudget || isProjectedOverBudget {
-                            Circle()
-                                .stroke(Color.red, lineWidth: ringWidth)
-                                .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
-                        } else {
-                            Circle()
-                                .stroke(Color.primaryBlue.opacity(0.12), lineWidth: ringWidth)
-                                .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
+            // Compute dimensions based on the target width (like watch uses its width)
+            let cornerRadius = targetWidth * cornerRadiusRatio
+            let lineWidth = max(targetWidth * lineWidthRatio, 6)
+            let inset = lineWidth / 2 + 1
+            let perimeterRect = CGRect(
+                x: inset,
+                y: inset,
+                width: targetWidth - inset * 2,
+                height: targetHeight - inset * 2
+            )
 
-                            let fillGradient = AngularGradient(
-                                colors: [Color.primaryBlue.opacity(0.3), Color.primaryBlue],
-                                center: .center,
-                                startAngle: .degrees(0),
-                                endAngle: .degrees(primaryTrim * 360)
-                            )
-
-                            Circle()
-                                .trim(from: 0, to: primaryTrim)
-                                .stroke(fillGradient, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
-                                .rotationEffect(.degrees(-90))
-                                .frame(width: ringRadius * 2, height: ringRadius * 2, alignment: .center)
-                        }
-
-                        Circle()
-                            .fill(Color.black)
-                            .frame(width: 17, height: 17)
-                            .position(endPoint)
-                            .contentShape(Circle().inset(by: -28))
-                            .highPriorityGesture(dragGesture)
-
-                        VStack(spacing: 6) {
-                            amountText
-                            Button {
-                                amount = 0
-                            } label: {
-
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "xmark")
-                                        Text("Clear")
-                                            .font(.system(size: 13, weight: .semibold))
-                                    }
-                                    .foregroundStyle(notZero ? Color.secondaryLabel : Color.pageBackground)
-
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .frame(width: dialSize, height: dialSize, alignment: .center)
-                    .contentShape(Circle().inset(by: -24))
-                    .coordinateSpace(name: "dial")
-                    .gesture(dragGesture)
-                } else {
-                    Color.clear
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(maxWidth: maxDialDiameter)
-            .aspectRatio(1, contentMode: .fit)
-
-            Text(statusText)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(statusForeground)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(statusBackground)
+            ZStack {
+                // Perimeter progress bar (matching watch app ratios)
+                AppPerimeterProgressBar(
+                    committedProgress: committedProgress,
+                    totalProgress: totalProgress,
+                    isOverBudget: wouldGoOverBudget || isOverBudget,
+                    indicatorProgress: indicatorProgress,
+                    cornerRadius: cornerRadius,
+                    lineWidth: lineWidth,
+                    rect: perimeterRect
                 )
 
-            Group {
-                if !isMonthOverBudget && !isProjectedOverBudget {
-                    Text("Daily allowance \(perDayAllowance.formatted(.currency(code: currencyCode)))")
-                } else {
-                    Text("Daily allowance placeholder")
-                        .hidden()
+                // Center content (matching watch app layout)
+                VStack(spacing: 0) {
+                    Spacer()
+
+                    // Budget header
+                    budgetHeader(fitWidth: targetWidth - lineWidth * 2 - 40)
+
+                    Spacer().frame(height: 12)
+
+                    // Main amount display
+                    amountDisplay(fitWidth: targetWidth - lineWidth * 2 - 40)
+
+                    Spacer().frame(height: 16)
+
+                    // Stats row
+                    statsRow
+
+                    Spacer().frame(height: 20)
+
+                    // Action buttons (clear only, no increment buttons)
+                    actionButtons
+
+                    Spacer()
                 }
+                .padding(.horizontal, lineWidth + 16)
             }
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Color.secondaryLabel)
-            .padding(.vertical, 2)
+            .frame(width: targetWidth, height: targetHeight)
+            .position(x: availableWidth / 2, y: availableHeight / 2)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        // Adjust touch location for the offset
+                        let adjustedLocation = CGPoint(
+                            x: value.location.x - xOffset,
+                            y: value.location.y - yOffset
+                        )
+                        handleDrag(at: adjustedLocation, in: perimeterRect)
+                    }
+                    .onEnded { _ in
+                        endDrag()
+                    }
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("BudgetDial")
-        .accessibilityLabel("Budget Dial")
-        .accessibilityValue("range:\(Int(dialRange.rounded()))")
     }
 
-    private var amountText: Text {
-        let formattedAmount = amount.formatted(.number.precision(.fractionLength(0)))
-        var attributedString = AttributedString("$ \(formattedAmount)")
+    // MARK: - Drag Gesture Handling
 
-        if let symbolRange = attributedString.range(of: "$ ") {
-            attributedString[symbolRange].font = .system(size: 30, weight: .bold)
-            attributedString[symbolRange].foregroundColor = .primaryBlue
-        }
+    /// Handles drag gesture - tracks rotation to adjust amount, dot stays at totalProgress
+    private func handleDrag(at location: CGPoint, in rect: CGRect) {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
 
-        if let amountRange = attributedString.range(of: formattedAmount) {
-            attributedString[amountRange].font = .system(size: 38, weight: .bold, design: .rounded)
-            attributedString[amountRange].foregroundColor = .primaryText
-        }
-
-        return Text(attributedString)
-    }
-
-    private func updateAmount(from location: CGPoint, in size: CGSize) {
-        let angle = normalizedAngle(for: location, in: size)
+        // Calculate current angle from center (in radians)
+        let dx = location.x - center.x
+        let dy = location.y - center.y
+        let currentAngle = atan2(dy, dx)
 
         if previousAngle == nil {
-            previousAngle = angle
-            initialProgress = scaling.normalizedProgress
+            // First touch - initialize rotation based on current amount
+            previousAngle = currentAngle
+            accumulatedRotation = (selectedAmount / dialRange) * 2 * .pi
+            return
         }
 
-        if let previousAngle, dialRange > 0 {
-            progressDelta += angleDelta(from: previousAngle, to: angle) / 360
+        guard let prevAngle = previousAngle else { return }
+
+        // Calculate angle delta, handling wrap-around
+        var angleDelta = currentAngle - prevAngle
+
+        // Handle wrap-around at ±π boundary
+        if angleDelta > .pi {
+            angleDelta -= 2 * .pi
+        } else if angleDelta < -.pi {
+            angleDelta += 2 * .pi
         }
 
-        previousAngle = angle
+        // Accumulate rotation
+        accumulatedRotation += angleDelta
+        accumulatedRotation = max(0, accumulatedRotation)  // Don't go negative
 
-        guard dialRange > 0 else { return }
+        previousAngle = currentAngle
 
-        let newProgress = max(0, initialProgress + progressDelta)
-        amount = scaling.amount(for: newProgress)
+        // Convert accumulated rotation to amount
+        let rotations = accumulatedRotation / (2 * .pi)
+        let newAmount = rotations * dialRange
+        draft.setAmount(max(0, newAmount))
     }
 
-    private func resetDragState() {
-        initialProgress = scaling.normalizedProgress
-        progressDelta = 0
+    /// Called when drag ends
+    private func endDrag() {
         previousAngle = nil
     }
 
-    private func normalizedAngle(for location: CGPoint, in size: CGSize) -> Double {
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
-        let angle = atan2(vector.dy, vector.dx)
-        var degrees = angle * 180 / .pi
-        if degrees < 0 { degrees += 360 }
-        return (degrees + 90).truncatingRemainder(dividingBy: 360)
+    // MARK: - View Components (matching watch app)
+
+    private func budgetHeader(fitWidth: CGFloat) -> some View {
+        VStack(spacing: 4) {
+            Text("MONTHLY BUDGET")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .tracking(1.2)
+                .foregroundStyle(Color.secondaryLabel)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+
+            Text(monthlyBudget, format: .currency(code: currencyCode))
+                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.primaryText)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: fitWidth)
     }
 
-    private func angleDelta(from previous: Double, to current: Double) -> Double {
-        smallestSignedAngleDelta(from: previous, to: current)
+    private func amountDisplay(fitWidth: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            if selectedAmount > 0 {
+                Text(selectedAmount, format: .currency(code: currencyCode))
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(wouldGoOverBudget ? Color.red : Color.primaryText)
+                    .minimumScaleFactor(0.3)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedAmount)
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: "hand.draw.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(Color.primaryBlue)
+
+                    Text("Drag to add")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.secondaryLabel)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .frame(maxWidth: fitWidth)
+    }
+
+    private var statsRow: some View {
+        HStack(spacing: 16) {
+            StatBadgeView(
+                label: "LEFT",
+                value: projectedRemaining,
+                currencyCode: currencyCode,
+                color: wouldGoOverBudget ? .red : Color.primaryBlue
+            )
+
+            StatBadgeView(
+                label: "SPENT",
+                value: currentSpent,
+                currencyCode: currencyCode,
+                color: Color.secondaryLabel
+            )
+        }
+    }
+
+    private var actionButtons: some View {
+        Group {
+            if selectedAmount > 0 {
+                HStack(spacing: 12) {
+                    // Clear button
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            draft.setAmount(0)
+                        }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color.secondaryLabel)
+                            .frame(width: 48, height: 48)
+                            .background(
+                                Circle()
+                                    .fill(Color.border)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 }
+
+// MARK: - Supporting Views for Perimeter Card
+
+private struct StatBadgeView: View {
+    let label: String
+    let value: Double
+    let currencyCode: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .tracking(0.8)
+                .foregroundStyle(Color.secondaryLabel)
+
+            Text(value, format: .currency(code: currencyCode))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(color)
+                .contentTransition(.numericText())
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.border)
+        )
+    }
+}
+
+// MARK: - App Perimeter Progress Bar (scaled from watch app ratios)
+
+private struct AppPerimeterProgressBar: View {
+    let committedProgress: Double
+    let totalProgress: Double
+    let isOverBudget: Bool
+    let indicatorProgress: Double
+    let cornerRadius: CGFloat
+    let lineWidth: CGFloat
+    let rect: CGRect  // The exact rect where the perimeter is drawn
+
+    // Adjusted corner radius for the stroke center line
+    private var adjustedCornerRadius: CGFloat {
+        max(cornerRadius - lineWidth / 2, 0)
+    }
+
+    var body: some View {
+        ZStack {
+            // Background track - draw in exact rect coordinates
+            AppPerimeterShape(cornerRadius: adjustedCornerRadius, startProgress: 0, endProgress: 1, rect: rect)
+                .stroke(
+                    Color.primaryBlue.opacity(0.12),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+
+            // Progress strokes
+            if isOverBudget {
+                AppPerimeterShape(cornerRadius: adjustedCornerRadius, startProgress: 0, endProgress: 1, rect: rect)
+                    .stroke(
+                        Color.red,
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                    )
+            } else {
+                // Committed spending (darker blue)
+                if committedProgress > 0 {
+                    AppPerimeterShape(cornerRadius: adjustedCornerRadius, startProgress: 0, endProgress: min(max(committedProgress, 0), 1), rect: rect)
+                        .stroke(
+                            Color.primaryBlue,
+                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                        )
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: committedProgress)
+                }
+
+                // Pending spending (lighter blue)
+                if totalProgress > committedProgress {
+                    AppPerimeterShape(cornerRadius: adjustedCornerRadius, startProgress: committedProgress, endProgress: min(max(totalProgress, 0), 1), rect: rect)
+                        .stroke(
+                            Color.primaryBlue.opacity(0.4),
+                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                        )
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: totalProgress)
+                }
+            }
+
+            // Indicator dot - NO animation so it stays locked to the perimeter
+            // (animation would interpolate position in a straight line, not along the path)
+            if indicatorProgress > 0 {
+                AppPerimeterIndicator(
+                    cornerRadius: adjustedCornerRadius,
+                    progress: indicatorProgress,
+                    rect: rect,
+                    dotSize: lineWidth + 4,
+                    fillColor: Color.primaryText
+                )
+            }
+        }
+    }
+}
+
+private struct AppPerimeterIndicator: View {
+    let cornerRadius: CGFloat
+    let progress: Double
+    let rect: CGRect
+    let dotSize: CGFloat
+    var fillColor: Color = Color.primaryText
+
+    var body: some View {
+        Circle()
+            .fill(fillColor)
+            .frame(width: dotSize, height: dotSize)
+            .position(pointOnPerimeter(progress: progress, in: rect, cornerRadius: cornerRadius))
+    }
+
+    private func pointOnPerimeter(progress: Double, in rect: CGRect, cornerRadius: CGFloat) -> CGPoint {
+        let cr = min(cornerRadius, min(rect.width, rect.height) / 2)
+        let straightSections = 2 * (rect.width - 2 * cr) + 2 * (rect.height - 2 * cr)
+        let cornerArcs = 2 * .pi * cr
+        let totalLength = straightSections + cornerArcs
+
+        let wrappedProgress = progress.truncatingRemainder(dividingBy: 1.0)
+        let targetDistance = wrappedProgress * totalLength
+
+        let topHalf = (rect.width - 2 * cr) / 2
+        let cornerLength = (.pi / 2) * cr
+
+        var distance = targetDistance
+
+        // Top edge (from center to right)
+        if distance <= topHalf {
+            return CGPoint(x: rect.midX + distance, y: rect.minY)
+        }
+        distance -= topHalf
+
+        // Top-right corner
+        if distance <= cornerLength {
+            let angle = -(.pi / 2) + (distance / cr)
+            return CGPoint(
+                x: rect.maxX - cr + cr * cos(angle),
+                y: rect.minY + cr + cr * sin(angle)
+            )
+        }
+        distance -= cornerLength
+
+        // Right edge
+        let rightEdge = rect.height - 2 * cr
+        if distance <= rightEdge {
+            return CGPoint(x: rect.maxX, y: rect.minY + cr + distance)
+        }
+        distance -= rightEdge
+
+        // Bottom-right corner
+        if distance <= cornerLength {
+            let angle: CGFloat = 0 + (distance / cr)
+            return CGPoint(
+                x: rect.maxX - cr + cr * cos(angle),
+                y: rect.maxY - cr + cr * sin(angle)
+            )
+        }
+        distance -= cornerLength
+
+        // Bottom edge
+        let bottomEdge = rect.width - 2 * cr
+        if distance <= bottomEdge {
+            return CGPoint(x: rect.maxX - cr - distance, y: rect.maxY)
+        }
+        distance -= bottomEdge
+
+        // Bottom-left corner
+        if distance <= cornerLength {
+            let angle = (.pi / 2) + (distance / cr)
+            return CGPoint(
+                x: rect.minX + cr + cr * cos(angle),
+                y: rect.maxY - cr + cr * sin(angle)
+            )
+        }
+        distance -= cornerLength
+
+        // Left edge
+        let leftEdge = rect.height - 2 * cr
+        if distance <= leftEdge {
+            return CGPoint(x: rect.minX, y: rect.maxY - cr - distance)
+        }
+        distance -= leftEdge
+
+        // Top-left corner
+        if distance <= cornerLength {
+            let angle: CGFloat = .pi + (distance / cr)
+            return CGPoint(
+                x: rect.minX + cr + cr * cos(angle),
+                y: rect.minY + cr + cr * sin(angle)
+            )
+        }
+        distance -= cornerLength
+
+        // Back to top center
+        return CGPoint(x: rect.minX + cr + distance, y: rect.minY)
+    }
+}
+
+private struct AppPerimeterShape: Shape {
+    let cornerRadius: CGFloat
+    var startProgress: Double
+    var endProgress: Double
+    let rect: CGRect  // Explicit rect to draw in (ignores the rect passed to path)
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(startProgress, endProgress) }
+        set {
+            startProgress = newValue.first
+            endProgress = newValue.second
+        }
+    }
+
+    func path(in _: CGRect) -> Path {
+        // Use our explicit rect, not the one passed by SwiftUI
+        let fullPath = createRoundedRectPath(in: rect)
+        return fullPath.trimmedPath(from: startProgress, to: endProgress)
+    }
+
+    private func createRoundedRectPath(in rect: CGRect) -> Path {
+        var path = Path()
+        let minDimension = min(rect.width, rect.height)
+        let cr = min(cornerRadius, minDimension / 2)
+
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+
+        path.addLine(to: CGPoint(x: rect.maxX - cr, y: rect.minY))
+        path.addArc(
+            center: CGPoint(x: rect.maxX - cr, y: rect.minY + cr),
+            radius: cr,
+            startAngle: .degrees(-90),
+            endAngle: .degrees(0),
+            clockwise: false
+        )
+
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - cr))
+        path.addArc(
+            center: CGPoint(x: rect.maxX - cr, y: rect.maxY - cr),
+            radius: cr,
+            startAngle: .degrees(0),
+            endAngle: .degrees(90),
+            clockwise: false
+        )
+
+        path.addLine(to: CGPoint(x: rect.minX + cr, y: rect.maxY))
+        path.addArc(
+            center: CGPoint(x: rect.minX + cr, y: rect.maxY - cr),
+            radius: cr,
+            startAngle: .degrees(90),
+            endAngle: .degrees(180),
+            clockwise: false
+        )
+
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + cr))
+        path.addArc(
+            center: CGPoint(x: rect.minX + cr, y: rect.minY + cr),
+            radius: cr,
+            startAngle: .degrees(180),
+            endAngle: .degrees(270),
+            clockwise: false
+        )
+
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.minY))
+
+        return path
+    }
+}
+
 
 // A flexible horizontal layout that wraps subviews onto new lines as needed
 private struct WrappingHStack: Layout {
