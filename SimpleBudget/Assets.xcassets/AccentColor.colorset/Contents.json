@@ -1,11 +1,27 @@
 {
   "colors" : [
     {
+      "color" : {
+        "platform" : "universal",
+        "reference" : "systemBlueColor"
+      },
+      "display-gamut" : "sRGB",
+      "idiom" : "universal"
+    },
+    {
+      "color" : {
+        "platform" : "universal",
+        "reference" : "systemBlueColor"
+      },
+      "display-gamut" : "display-P3",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "localizable" : true
   }
 }
