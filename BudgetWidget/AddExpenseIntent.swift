@@ -69,6 +69,7 @@ struct AdjustQuickAmountIntent: AppIntent {
         self.delta = 0
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         let updated = updateAmount()
 
@@ -96,6 +97,7 @@ struct ClearQuickAmountIntent: AppIntent {
 
     init() { }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         // Set the stored amount to 0 in UserDefaults.
         clearAmount()
