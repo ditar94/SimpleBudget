@@ -25,6 +25,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     var note: String
 
     // Persists a new transaction into the shared model container
+    @MainActor
     func perform() async throws -> some IntentResult {
         guard amount > 0 else {
             return .result(dialog: IntentDialog("Amount must be greater than zero."))
