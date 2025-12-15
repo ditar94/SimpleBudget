@@ -25,6 +25,7 @@ struct AddExpenseIntent: AppIntent, WidgetConfigurationIntent {
     var note: String
 
     // Persists a new transaction into the shared model container
+    @MainActor
     func perform() async throws -> some IntentResult {
         guard amount > 0 else {
             return .result(dialog: IntentDialog("Amount must be greater than zero."))
@@ -68,6 +69,7 @@ struct AdjustQuickAmountIntent: AppIntent {
         self.delta = 0
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         let updated = updateAmount()
 
@@ -95,6 +97,7 @@ struct ClearQuickAmountIntent: AppIntent {
 
     init() { }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         // Set the stored amount to 0 in UserDefaults.
         clearAmount()

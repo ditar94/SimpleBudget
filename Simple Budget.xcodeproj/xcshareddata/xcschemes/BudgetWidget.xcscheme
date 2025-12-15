@@ -28,7 +28,7 @@
                BlueprintIdentifier = "47C425F19DAC40479B33182B"
                BuildableName = "BudgetWidget.appex"
                BlueprintName = "BudgetWidget"
-               ReferencedContainer = "container:SimpleBudget.xcodeproj">
+               ReferencedContainer = "container:Simple Budget.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "3EC2C6272EDFC49C0068D990"
-            BuildableName = "SimpleBudget.app"
-            BlueprintName = "SimpleBudget"
-            ReferencedContainer = "container:SimpleBudget.xcodeproj">
+            BuildableName = "SimpleBudget Track Spending.app"
+            BlueprintName = "SimpleBudget Track Spending"
+            ReferencedContainer = "container:Simple Budget.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <MacroExpansion>
@@ -66,7 +66,7 @@
             BlueprintIdentifier = "47C425F19DAC40479B33182B"
             BuildableName = "BudgetWidget.appex"
             BlueprintName = "BudgetWidget"
-            ReferencedContainer = "container:SimpleBudget.xcodeproj">
+            ReferencedContainer = "container:Simple Budget.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </LaunchAction>
@@ -84,7 +84,7 @@
             BlueprintIdentifier = "47C425F19DAC40479B33182B"
             BuildableName = "BudgetWidget.appex"
             BlueprintName = "BudgetWidget"
-            ReferencedContainer = "container:SimpleBudget.xcodeproj">
+            ReferencedContainer = "container:Simple Budget.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>
