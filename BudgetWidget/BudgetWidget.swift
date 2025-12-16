@@ -255,7 +255,7 @@ struct BudgetWidgetView: View {
 
     var body: some View {
         widgetContent
-            .modifier(ClearBackgroundModifier())
+            .modifier(GlassBackgroundModifier())
     }
 
     @ViewBuilder
@@ -277,19 +277,24 @@ struct BudgetWidgetView: View {
     }
 }
 
-// MARK: - Clear Background Modifier for Widgets
+// MARK: - Glass Background Modifier for Widgets
 
-private struct ClearBackgroundModifier: ViewModifier {
+private struct GlassBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
+            // iOS 26+: Use glassEffect for liquid glass appearance
             content
+                .widgetAccentable()
                 .containerBackground(for: .widget) {
                     Color.clear.glassEffect()
                 }
         } else if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+            // iOS 17-25: Use translucent overlay for glass-like effect
+            // Note: True "Clear" mode is user-controlled via Home Screen customization
             content
+                .widgetAccentable()
                 .containerBackground(for: .widget) {
-                    Color.clear
+                    Color.white.opacity(0.15)
                 }
         } else {
             content
